@@ -91,3 +91,17 @@ kalloc(void)
   return (void*)r;
 }
 
+// Get the number of bytes of free memory
+int
+freemem(void)
+{
+  int n = 0;
+  struct run *r;
+
+  acquire(&kmem.lock);
+  for(r = kmem.freelist; r != 0; r = r->next)
+    ++n;
+  release(&kmem.lock);
+  return n * 4096;
+}
+
