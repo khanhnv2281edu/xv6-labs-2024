@@ -144,10 +144,20 @@ void testbad() {
 int
 main(int argc, char *argv[])
 {
+  struct sysinfo info;
+
   printf("sysinfotest: start\n");
+  sinfo(&info);
+
+  printf("Free memory: %ld bytes\n", info.freemem);
+  printf("Number of processes: %ld\n", info.nproc);
+  printf("Number of open files: %ld\n", info.nfile);
+
   testcall();
   testmem();
   testproc();
+
   printf("sysinfotest: OK\n");
   exit(0);
 }
+

@@ -15,6 +15,7 @@ systeminfo(uint64 addr) {
 
   info.freemem = freemem();
   info.nproc = nproc();
+  info.nfile = nfile();
 
   if(copyout(p->pagetable, addr, (char *)&info, sizeof(info)) < 0)
     return -1;
