@@ -1,0 +1,2062 @@
+[1mdiff --git a/.vscode/settings.json b/.vscode/settings.json[m
+[1mnew file mode 100644[m
+[1mindex 0000000..64111c2[m
+[1m--- /dev/null[m
+[1m+++ b/.vscode/settings.json[m
+[36m@@ -0,0 +1,8 @@[m
+[32m+[m[32m{[m
+[32m+[m[32m    "files.associations": {[m
+[32m+[m[32m        "*.sqlbook": "sql",[m
+[32m+[m[32m        "*.ndjson": "jsonl",[m
+[32m+[m[32m        "*.dbclient-js": "javascript",[m
+[32m+[m[32m        "param.h": "c"[m
+[32m+[m[32m    }[m
+[32m+[m[32m}[m
+\ No newline at end of file[m
+[1mdiff --git a/Makefile b/Makefile[m
+[1mindex 74e454f..6b0ec30 100644[m
+[1m--- a/Makefile[m
+[1m+++ b/Makefile[m
+[36m@@ -30,7 +30,8 @@[m [mOBJS = \[m
+   $K/sysfile.o \[m
+   $K/kernelvec.o \[m
+   $K/plic.o \[m
+[31m-  $K/virtio_disk.o[m
+[32m+[m[32m  $K/virtio_disk.o \[m
+[32m+[m[32m  $K/sysinfo.o \[m
+ [m
+ OBJS_KCSAN = \[m
+   $K/start.o \[m
+[36m@@ -194,6 +195,7 @@[m [mUPROGS=\[m
+ 	$U/_grind\[m
+ 	$U/_wc\[m
+ 	$U/_zombie\[m
+[32m+[m	[32m$U/_sysinfotest[m
+ [m
+ [m
+ [m
+[1mdiff --git a/README b/README[m
+[1mindex 5a5d695..f583201 100644[m
+[1m--- a/README[m
+[1m+++ b/README[m
+[36m@@ -31,9 +31,6 @@[m [mRafael Ubal, Amane Uehara, Pablo Ventura, Xi Wang, WaheedHafez,[m
+ Keiichi Watanabe, Lucas Wolf, Nicolas Wolovick, wxdao, Grant Wu, x653,[m
+ Jindong Zhang, Icenowy Zheng, ZhUyU1997, and Zou Chang Wei.[m
+ [m
+[31m-The code in the files that constitute xv6 is[m
+[31m-Copyright 2006-2024 Frans Kaashoek, Robert Morris, and Russ Cox.[m
+[31m-[m
+ ERROR REPORTS[m
+ [m
+ Please send errors and suggestions to Frans Kaashoek and Robert Morris[m
+[1mdiff --git a/change.patch b/change.patch[m
+[1mnew file mode 100644[m
+[1mindex 0000000..38435cc[m
+[1m--- /dev/null[m
+[1m+++ b/change.patch[m
+[36m@@ -0,0 +1,921 @@[m
+[32m+[m[32mdiff --git a/README b/README[m
+[32m+[m[32mindex 5a5d695..f583201 100644[m
+[32m+[m[32m--- a/README[m
+[32m+[m[32m+++ b/README[m
+[32m+[m[32m@@ -31,9 +31,6 @@ Rafael Ubal, Amane Uehara, Pablo Ventura, Xi Wang, WaheedHafez,[m
+[32m+[m[32m Keiichi Watanabe, Lucas Wolf, Nicolas Wolovick, wxdao, Grant Wu, x653,[m
+[32m+[m[32m Jindong Zhang, Icenowy Zheng, ZhUyU1997, and Zou Chang Wei.[m
+[32m+[m[41m [m
+[32m+[m[32m-The code in the files that constitute xv6 is[m
+[32m+[m[32m-Copyright 2006-2024 Frans Kaashoek, Robert Morris, and Russ Cox.[m
+[32m+[m[32m-[m
+[32m+[m[32m ERROR REPORTS[m
+[32m+[m[41m [m
+[32m+[m[32m Please send errors and suggestions to Frans Kaashoek and Robert Morris[m
+[32m+[m[32mdiff --git a/conf/lab.mk b/conf/lab.mk[m
+[32m+[m[32mindex 05e8b8d..278d1a8 100644[m
+[32m+[m[32m--- a/conf/lab.mk[m
+[32m+[m[32m+++ b/conf/lab.mk[m
+[32m+[m[32m@@ -1 +1 @@[m
+[32m+[m[32m-LAB=util[m
+[32m+[m[32m+LAB=syscall[m
+[32m+[m[32mdiff --git a/grade-lab-syscall b/grade-lab-syscall[m
+[32m+[m[32mnew file mode 100755[m
+[32m+[m[32mindex 0000000..928369e[m
+[32m+[m[32m--- /dev/null[m
+[32m+[m[32m+++ b/grade-lab-syscall[m
+[32m+[m[32m@@ -0,0 +1,82 @@[m
+[32m+[m[32m+#!/usr/bin/env python3[m
+[32m+[m[32m+[m
+[32m+[m[32m+import re[m
+[32m+[m[32m+from gradelib import *[m
+[32m+[m[32m+[m
+[32m+[m[32m+r = Runner(save("xv6.out"))[m
+[32m+[m[32m+[m
+[32m+[m[32m+@test(5, "answers-syscall.txt")[m
+[32m+[m[32m+def test_answers():[m
+[32m+[m[32m+    # just a simple sanity check, will be graded manually[m
+[32m+[m[32m+    check_answers("answers-syscall.txt")[m
+[32m+[m[32m+[m
+[32m+[m[32m+@test(5, "trace 32 grep")[m
+[32m+[m[32m+def test_trace_32_grep():[m
+[32m+[m[32m+    r.run_qemu(shell_script([[m
+[32m+[m[32m+        'trace 32 grep hello README'[m
+[32m+[m[32m+    ]))[m
+[32m+[m[32m+    r.match('^\\d+: syscall read -> \\d+')[m
+[32m+[m[32m+    r.match('^\\d+: syscall read -> \\d+')[m
+[32m+[m[32m+    r.match('^\\d+: syscall read -> \\d+')[m
+[32m+[m[32m+    r.match('^\\d+: syscall read -> 0')[m
+[32m+[m[32m+[m
+[32m+[m[32m+@test(5, "trace close grep")[m
+[32m+[m[32m+def test_trace_close_grep():[m
+[32m+[m[32m+    r.run_qemu(shell_script(['trace 2097152 grep hello README']))[m
+[32m+[m[32m+    r.match('^\\d+: syscall close -> 0')[m
+[32m+[m[32m+    r.match(no=[".* syscall read .*"])[m
+[32m+[m[32m+[m
+[32m+[m[32m+@test(5, "trace exec + open grep")[m
+[32m+[m[32m+def test_trace_exec_open_grep():[m
+[32m+[m[32m+    r.run_qemu(shell_script(['trace 32896 grep hello README']))[m
+[32m+[m[32m+    r.match('^\\d+: syscall exec -> 3')[m
+[32m+[m[32m+    r.match('^\\d+: syscall open -> 3')[m
+[32m+[m[32m+    r.match(no=[".* syscall read .*"])[m
+[32m+[m[32m+[m
+[32m+[m[32m+@test(5, "trace all grep")[m
+[32m+[m[32m+def test_trace_all_grep():[m
+[32m+[m[32m+    r.run_qemu(shell_script([[m
+[32m+[m[32m+        'trace 2147483647 grep hello README'[m
+[32m+[m[32m+    ]))[m
+[32m+[m[32m+    r.match('^\\d+: syscall trace -> 0')[m
+[32m+[m[32m+    r.match('^\\d+: syscall exec -> 3')[m
+[32m+[m[32m+    r.match('^\\d+: syscall open -> 3')[m
+[32m+[m[32m+    r.match('^\\d+: syscall read -> \\d+')[m
+[32m+[m[32m+    r.match('^\\d+: syscall read -> \\d+')[m
+[32m+[m[32m+    r.match('^\\d+: syscall read -> \\d+')[m
+[32m+[m[32m+    r.match('^\\d+: syscall read -> 0')[m
+[32m+[m[32m+    r.match('^\\d+: syscall close -> 0')[m
+[32m+[m[32m+[m
+[32m+[m[32m+@test(5, "trace nothing")[m
+[32m+[m[32m+def test_trace_nothing():[m
+[32m+[m[32m+    r.run_qemu(shell_script([[m
+[32m+[m[32m+        'grep hello README'[m
+[32m+[m[32m+    ]))[m
+[32m+[m[32m+    r.match(no=[".* syscall .*"])[m
+[32m+[m[32m+[m
+[32m+[m[32m+@test(5, "trace children")[m
+[32m+[m[32m+def test_trace_children():[m
+[32m+[m[32m+    r.run_qemu(shell_script([[m
+[32m+[m[32m+        'trace 2 usertests forkforkfork'[m
+[32m+[m[32m+    ]))[m
+[32m+[m[32m+    r.match('3: syscall fork -> 4')[m
+[32m+[m[32m+    r.match('^5: syscall fork -> \\d+')[m
+[32m+[m[32m+    r.match('^6: syscall fork -> \\d+')[m
+[32m+[m[32m+    r.match('^\\d+: syscall fork -> -1')[m
+[32m+[m[32m+    r.match('^OK')[m
+[32m+[m[32m+[m
+[32m+[m[32m+@test(14, "attack")[m
+[32m+[m[32m+def test_attack():[m
+[32m+[m[32m+    r.run_qemu(shell_script([[m
+[32m+[m[32m+        'attacktest'[m
+[32m+[m[32m+    ]))[m
+[32m+[m[32m+    r.match('^OK: secret is')[m
+[32m+[m[32m+[m
+[32m+[m[32m+@test(1, "time")[m
+[32m+[m[32m+def test_time():[m
+[32m+[m[32m+    check_time()[m
+[32m+[m[32m+[m
+[32m+[m[32m+run_tests()[m
+[32m+[m[32m+[m
+[32m+[m[32m+[m
+[32m+[m[32m+[m
+[32m+[m[32mdiff --git a/grade-lab-util b/grade-lab-util[m
+[32m+[m[32mdeleted file mode 100755[m
+[32m+[m[32mindex 9ba6e37..0000000[m
+[32m+[m[32m--- a/grade-lab-util[m
+[32m+[m[32m+++ /dev/null[m
+[32m+[m[32m@@ -1,105 +0,0 @@[m
+[32m+[m[32m-#!/usr/bin/env python3[m
+[32m+[m[32m-[m
+[32m+[m[32m-import re[m
+[32m+[m[32m-from gradelib import *[m
+[32m+[m[32m-[m
+[32m+[m[32m-r = Runner(save("xv6.out"))[m
+[32m+[m[32m-[m
+[32m+[m[32m-@test(5, "sleep, no arguments")[m
+[32m+[m[32m-def test_sleep_no_args():[m
+[32m+[m[32m-    r.run_qemu(shell_script([[m
+[32m+[m[32m-        'sleep'[m
+[32m+[m[32m-    ]))[m
+[32m+[m[32m-    r.match(no=["exec .* failed", "$ sleep\n$"])[m
+[32m+[m[32m-[m
+[32m+[m[32m-@test(5, "sleep, returns")[m
+[32m+[m[32m-def test_sleep_no_args():[m
+[32m+[m[32m-    r.run_qemu(shell_script([[m
+[32m+[m[32m-        'sleep',[m
+[32m+[m[32m-        'echo OK'[m
+[32m+[m[32m-    ]))[m
+[32m+[m[32m-    r.match('^OK$', no=["exec .* failed", "$ sleep\n$"])[m
+[32m+[m[32m-[m
+[32m+[m[32m-@test(10, "sleep, makes syscall")[m
+[32m+[m[32m-def test_sleep():[m
+[32m+[m[32m-    r.run_qemu(shell_script([[m
+[32m+[m[32m-        'sleep 10',[m
+[32m+[m[32m-        'echo FAIL'[m
+[32m+[m[32m-    ]), stop_breakpoint('sys_sleep'))[m
+[32m+[m[32m-    r.match('\\$ sleep 10', no=['FAIL'])[m
+[32m+[m[32m-[m
+[32m+[m[32m-@test(20, "pingpong")[m
+[32m+[m[32m-def test_pingpong():[m
+[32m+[m[32m-    r.run_qemu(shell_script([[m
+[32m+[m[32m-        'pingpong', 'echo OK'[m
+[32m+[m[32m-    ]))[m
+[32m+[m[32m-    r.match('^\\d+: received ping$', '^\\d+: received pong$', '^OK$')[m
+[32m+[m[32m-[m
+[32m+[m[32m-@test(20, "primes")[m
+[32m+[m[32m-def test_primes():[m
+[32m+[m[32m-    r.run_qemu(shell_script([[m
+[32m+[m[32m-        'primes', 'echo OK'[m
+[32m+[m[32m-    ]))[m
+[32m+[m[32m-    args = ['prime %d' % i for i in [2, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37, 41, 43, 47, 53, 59, 61, 67, 71, 73, 79, 83, 89, 97, 101, 103, 107, 109, 113, 127, 131, 137, 139, 149, 151, 157, 163, 167, 173, 179, 181, 191, 193, 197, 199, 211, 223, 227, 229, 233, 239, 241, 251, 257, 263, 269]][m
+[32m+[m[32m-    args.append('^OK$')[m
+[32m+[m[32m-    r.match(*args)[m
+[32m+[m[32m-[m
+[32m+[m[32m-@test(10, "find, in current directory")[m
+[32m+[m[32m-def test_find_curdir():[m
+[32m+[m[32m-    fn = random_str()[m
+[32m+[m[32m-    r.run_qemu(shell_script([[m
+[32m+[m[32m-        'echo > %s' % fn,[m
+[32m+[m[32m-        'find . %s' % fn[m
+[32m+[m[32m-    ]))[m
+[32m+[m[32m-    r.match('./%s' % fn)[m
+[32m+[m[32m-    r.match(no=["./README", "README"])[m
+[32m+[m[32m-[m
+[32m+[m[32m-@test(10, "find, in sub-directory")[m
+[32m+[m[32m-def test_find_curdir():[m
+[32m+[m[32m-    dd = random_str()[m
+[32m+[m[32m-    fn = random_str()[m
+[32m+[m[32m-    r.run_qemu(shell_script([[m
+[32m+[m[32m-        'echo > %s' % fn,[m
+[32m+[m[32m-        'mkdir %s' % dd,[m
+[32m+[m[32m-        'echo > %s/%s' % (dd, fn),[m
+[32m+[m[32m-        'find %s %s' % (dd, fn)[m
+[32m+[m[32m-    ]))[m
+[32m+[m[32m-    r.match('%s/%s' % (dd, fn))[m
+[32m+[m[32m-    r.match(no=['./%s' % fn])[m
+[32m+[m[32m-[m
+[32m+[m[32m-@test(10, "find, recursive")[m
+[32m+[m[32m-def test_find_recursive():[m
+[32m+[m[32m-    needle = random_str()[m
+[32m+[m[32m-    dirs = [random_str() for _ in range(3)][m
+[32m+[m[32m-    r.run_qemu(shell_script([[m
+[32m+[m[32m-        'mkdir %s' % dirs[0],[m
+[32m+[m[32m-        'echo > %s/%s' % (dirs[0], needle),[m
+[32m+[m[32m-        'mkdir %s/%s' % (dirs[0], dirs[1]),[m
+[32m+[m[32m-        'echo > %s/%s/%s' % (dirs[0], dirs[1], needle),[m
+[32m+[m[32m-        'mkdir %s' % dirs[2],[m
+[32m+[m[32m-        'echo > %s/%s' % (dirs[2], needle),[m
+[32m+[m[32m-        'find . %s' % needle[m
+[32m+[m[32m-    ]))[m
+[32m+[m[32m-    r.match('./%s/%s' % (dirs[0], needle),[m
+[32m+[m[32m-            './%s/%s/%s' % (dirs[0], dirs[1], needle),[m
+[32m+[m[32m-            './%s/%s' % (dirs[2], needle))[m
+[32m+[m[32m-[m
+[32m+[m[32m-@test(10, "xargs")[m
+[32m+[m[32m-def test_xargs():[m
+[32m+[m[32m-    r.run_qemu(shell_script([[m
+[32m+[m[32m-        'sh < xargstest.sh',[m
+[32m+[m[32m-        'echo DONE',[m
+[32m+[m[32m-    ], 'DONE'))[m
+[32m+[m[32m-    matches = re.findall("hello", r.qemu.output)[m
+[32m+[m[32m-    assert_equal(len(matches), 3, "Number of appearances of 'hello'")[m
+[32m+[m[32m-[m
+[32m+[m[32m-@test(9, "xargs, multi-line echo")[m
+[32m+[m[32m-def test_xargs_multiline():[m
+[32m+[m[32m-    r.run_qemu(shell_script(['(echo 1 ; echo 2) | xargs echo']))[m
+[32m+[m[32m-    r.match('^1$', '^2$')[m
+[32m+[m[32m-[m
+[32m+[m[32m-@test(1, "time")[m
+[32m+[m[32m-def test_time():[m
+[32m+[m[32m-    check_time()[m
+[32m+[m[32m-[m[41m    [m
+[32m+[m[32m-run_tests()[m
+[32m+[m[32mdiff --git a/kernel/kalloc.c b/kernel/kalloc.c[m
+[32m+[m[32mindex 0699e7e..5247b91 100644[m
+[32m+[m[32m--- a/kernel/kalloc.c[m
+[32m+[m[32m+++ b/kernel/kalloc.c[m
+[32m+[m[32m@@ -30,13 +30,16 @@ kinit()[m
+[32m+[m[32m   freerange(end, (void*)PHYSTOP);[m
+[32m+[m[32m }[m
+[32m+[m[41m [m
+[32m+[m[32m+[m
+[32m+[m[32m+[m
+[32m+[m[32m void[m
+[32m+[m[32m freerange(void *pa_start, void *pa_end)[m
+[32m+[m[32m {[m
+[32m+[m[32m   char *p;[m
+[32m+[m[32m   p = (char*)PGROUNDUP((uint64)pa_start);[m
+[32m+[m[32m-  for(; p + PGSIZE <= (char*)pa_end; p += PGSIZE)[m
+[32m+[m[32m+  for(; p + PGSIZE <= (char*)pa_end; p += PGSIZE) {[m
+[32m+[m[32m     kfree(p);[m
+[32m+[m[32m+  }[m
+[32m+[m[32m }[m
+[32m+[m[41m [m
+[32m+[m[32m // Free the page of physical memory pointed at by pa,[m
+[32m+[m[32m@@ -51,9 +54,12 @@ kfree(void *pa)[m
+[32m+[m[32m   if(((uint64)pa % PGSIZE) != 0 || (char*)pa < end || (uint64)pa >= PHYSTOP)[m
+[32m+[m[32m     panic("kfree");[m
+[32m+[m[41m [m
+[32m+[m[32m+[m
+[32m+[m[32m+#ifndef LAB_SYSCALL[m
+[32m+[m[32m   // Fill with junk to catch dangling refs.[m
+[32m+[m[32m   memset(pa, 1, PGSIZE);[m
+[32m+[m[32m-[m
+[32m+[m[32m+#endif[m
+[32m+[m[32m+[m[41m  [m
+[32m+[m[32m   r = (struct run*)pa;[m
+[32m+[m[41m [m
+[32m+[m[32m   acquire(&kmem.lock);[m
+[32m+[m[32m@@ -62,6 +68,8 @@ kfree(void *pa)[m
+[32m+[m[32m   release(&kmem.lock);[m
+[32m+[m[32m }[m
+[32m+[m[41m [m
+[32m+[m[32m+[m
+[32m+[m[32m+[m
+[32m+[m[32m // Allocate one 4096-byte page of physical memory.[m
+[32m+[m[32m // Returns a pointer that the kernel can use.[m
+[32m+[m[32m // Returns 0 if the memory cannot be allocated.[m
+[32m+[m[32m@@ -72,11 +80,14 @@ kalloc(void)[m
+[32m+[m[41m [m
+[32m+[m[32m   acquire(&kmem.lock);[m
+[32m+[m[32m   r = kmem.freelist;[m
+[32m+[m[32m-  if(r)[m
+[32m+[m[32m+  if(r) {[m
+[32m+[m[32m     kmem.freelist = r->next;[m
+[32m+[m[32m+  }[m
+[32m+[m[32m   release(&kmem.lock);[m
+[32m+[m[32m-[m
+[32m+[m[32m+#ifndef LAB_SYSCALL[m
+[32m+[m[32m   if(r)[m
+[32m+[m[32m     memset((char*)r, 5, PGSIZE); // fill with junk[m
+[32m+[m[32m+#endif[m
+[32m+[m[32m   return (void*)r;[m
+[32m+[m[32m }[m
+[32m+[m[32m+[m
+[32m+[m[32mdiff --git a/kernel/param.h b/kernel/param.h[m
+[32m+[m[32mindex 07e6f17..80ec6d3 100644[m
+[32m+[m[32m--- a/kernel/param.h[m
+[32m+[m[32m+++ b/kernel/param.h[m
+[32m+[m[32m@@ -1,8 +1,4 @@[m
+[32m+[m[32m-#ifdef LAB_FS[m
+[32m+[m[32m-#define NPROC        10  // maximum number of processes[m
+[32m+[m[32m-#else[m
+[32m+[m[32m-#define NPROC        64  // maximum number of processes (speedsup bigfile)[m
+[32m+[m[32m-#endif[m
+[32m+[m[32m+#define NPROC        64  // maximum number of processes[m
+[32m+[m[32m #define NCPU          8  // maximum number of CPUs[m
+[32m+[m[32m #define NOFILE       16  // open files per process[m
+[32m+[m[32m #define NFILE       100  // open files per system[m
+[32m+[m[32m@@ -13,21 +9,7 @@[m
+[32m+[m[32m #define MAXOPBLOCKS  10  // max # of blocks any FS op writes[m
+[32m+[m[32m #define LOGSIZE      (MAXOPBLOCKS*3)  // max data blocks in on-disk log[m
+[32m+[m[32m #define NBUF         (MAXOPBLOCKS*3)  // size of disk block cache[m
+[32m+[m[32m-#ifdef LAB_FS[m
+[32m+[m[32m-#define FSSIZE       200000  // size of file system in blocks[m
+[32m+[m[32m-#else[m
+[32m+[m[32m-#ifdef LAB_LOCK[m
+[32m+[m[32m-#define FSSIZE       10000  // size of file system in blocks[m
+[32m+[m[32m-#else[m
+[32m+[m[32m-#define FSSIZE       2000   // size of file system in blocks[m
+[32m+[m[32m-#endif[m
+[32m+[m[32m-#endif[m
+[32m+[m[32m+#define FSSIZE       2000  // size of file system in blocks[m
+[32m+[m[32m #define MAXPATH      128   // maximum file path name[m
+[32m+[m[32m-[m
+[32m+[m[32m-#ifdef LAB_UTIL[m
+[32m+[m[32m-#define USERSTACK    2     // user stack pages[m
+[32m+[m[32m-#else[m
+[32m+[m[32m #define USERSTACK    1     // user stack pages[m
+[32m+[m[32m-#endif[m
+[32m+[m[32m-[m
+[32m+[m[41m [m
+[32m+[m[32mdiff --git a/kernel/riscv.h b/kernel/riscv.h[m
+[32m+[m[32mindex 6cfff1e..f7aaa8a 100644[m
+[32m+[m[32m--- a/kernel/riscv.h[m
+[32m+[m[32m+++ b/kernel/riscv.h[m
+[32m+[m[32m@@ -204,7 +204,7 @@ r_menvcfg()[m
+[32m+[m[32m static inline void[m[41m [m
+[32m+[m[32m w_menvcfg(uint64 x)[m
+[32m+[m[32m {[m
+[32m+[m[32m-  //asm volatile("csrw menvcfg, %0" : : "r" (x));[m
+[32m+[m[32m+  // asm volatile("csrw menvcfg, %0" : : "r" (x));[m
+[32m+[m[32m   asm volatile("csrw 0x30a, %0" : : "r" (x));[m
+[32m+[m[32m }[m
+[32m+[m[41m [m
+[32m+[m[32m@@ -314,14 +314,6 @@ r_sp()[m
+[32m+[m[32m   return x;[m
+[32m+[m[32m }[m
+[32m+[m[41m [m
+[32m+[m[32m-static inline uint64[m
+[32m+[m[32m-r_fp()[m
+[32m+[m[32m-{[m
+[32m+[m[32m-  uint64 x;[m
+[32m+[m[32m-  asm volatile("mv %0, s0" : "=r" (x) );[m
+[32m+[m[32m-  return x;[m
+[32m+[m[32m-}[m
+[32m+[m[32m-[m
+[32m+[m[32m // read and write tp, the thread pointer, which xv6 uses to hold[m
+[32m+[m[32m // this core's hartid (core number), the index into cpus[].[m
+[32m+[m[32m static inline uint64[m
+[32m+[m[32m@@ -362,11 +354,6 @@ typedef uint64 *pagetable_t; // 512 PTEs[m
+[32m+[m[32m #define PGSIZE 4096 // bytes per page[m
+[32m+[m[32m #define PGSHIFT 12  // bits of offset within a page[m
+[32m+[m[41m [m
+[32m+[m[32m-#ifdef LAB_PGTBL[m
+[32m+[m[32m-#define SUPERPGSIZE (2 * (1 << 20)) // bytes per page[m
+[32m+[m[32m-#define SUPERPGROUNDUP(sz)  (((sz)+SUPERPGSIZE-1) & ~(SUPERPGSIZE-1))[m
+[32m+[m[32m-#endif[m
+[32m+[m[32m-[m
+[32m+[m[32m #define PGROUNDUP(sz)  (((sz)+PGSIZE-1) & ~(PGSIZE-1))[m
+[32m+[m[32m #define PGROUNDDOWN(a) (((a)) & ~(PGSIZE-1))[m
+[32m+[m[41m [m
+[32m+[m[32m@@ -376,12 +363,6 @@ typedef uint64 *pagetable_t; // 512 PTEs[m
+[32m+[m[32m #define PTE_X (1L << 3)[m
+[32m+[m[32m #define PTE_U (1L << 4) // user can access[m
+[32m+[m[41m [m
+[32m+[m[32m-[m
+[32m+[m[32m-[m
+[32m+[m[32m-#if defined(LAB_MMAP) || defined(LAB_PGTBL)[m
+[32m+[m[32m-#define PTE_LEAF(pte) (((pte) & PTE_R) | ((pte) & PTE_W) | ((pte) & PTE_X))[m
+[32m+[m[32m-#endif[m
+[32m+[m[32m-[m
+[32m+[m[32m // shift a physical address to the right place for a PTE.[m
+[32m+[m[32m #define PA2PTE(pa) ((((uint64)pa) >> 12) << 10)[m
+[32m+[m[41m [m
+[32m+[m[32mdiff --git a/kernel/sysinfo.h b/kernel/sysinfo.h[m
+[32m+[m[32mnew file mode 100644[m
+[32m+[m[32mindex 0000000..fb878e6[m
+[32m+[m[32m--- /dev/null[m
+[32m+[m[32m+++ b/kernel/sysinfo.h[m
+[32m+[m[32m@@ -0,0 +1,4 @@[m
+[32m+[m[32m+struct sysinfo {[m
+[32m+[m[32m+  uint64 freemem;   // amount of free memory (bytes)[m
+[32m+[m[32m+  uint64 nproc;     // number of process[m
+[32m+[m[32m+};[m
+[32m+[m[32mdiff --git a/kernel/vm.c b/kernel/vm.c[m
+[32m+[m[32mindex 62421a2..7f388fe 100644[m
+[32m+[m[32m--- a/kernel/vm.c[m
+[32m+[m[32m+++ b/kernel/vm.c[m
+[32m+[m[32m@@ -4,6 +4,8 @@[m
+[32m+[m[32m #include "elf.h"[m
+[32m+[m[32m #include "riscv.h"[m
+[32m+[m[32m #include "defs.h"[m
+[32m+[m[32m+#include "spinlock.h"[m
+[32m+[m[32m+#include "proc.h"[m
+[32m+[m[32m #include "fs.h"[m
+[32m+[m[41m [m
+[32m+[m[32m /*[m
+[32m+[m[32m@@ -30,6 +32,14 @@ kvmmake(void)[m
+[32m+[m[32m   // virtio mmio disk interface[m
+[32m+[m[32m   kvmmap(kpgtbl, VIRTIO0, VIRTIO0, PGSIZE, PTE_R | PTE_W);[m
+[32m+[m[41m [m
+[32m+[m[32m+#ifdef LAB_NET[m
+[32m+[m[32m+  // PCI-E ECAM (configuration space), for pci.c[m
+[32m+[m[32m+  kvmmap(kpgtbl, 0x30000000L, 0x30000000L, 0x10000000, PTE_R | PTE_W);[m
+[32m+[m[32m+[m
+[32m+[m[32m+  // pci.c maps the e1000's registers here.[m
+[32m+[m[32m+  kvmmap(kpgtbl, 0x40000000L, 0x40000000L, 0x20000, PTE_R | PTE_W);[m
+[32m+[m[32m+#endif[m[41m  [m
+[32m+[m[32m+[m
+[32m+[m[32m   // PLIC[m
+[32m+[m[32m   kvmmap(kpgtbl, PLIC, PLIC, 0x4000000, PTE_R | PTE_W);[m
+[32m+[m[41m [m
+[32m+[m[32m@@ -92,6 +102,11 @@ walk(pagetable_t pagetable, uint64 va, int alloc)[m
+[32m+[m[32m     pte_t *pte = &pagetable[PX(level, va)];[m
+[32m+[m[32m     if(*pte & PTE_V) {[m
+[32m+[m[32m       pagetable = (pagetable_t)PTE2PA(*pte);[m
+[32m+[m[32m+#ifdef LAB_PGTBL[m
+[32m+[m[32m+      if(PTE_LEAF(*pte)) {[m
+[32m+[m[32m+        return pte;[m
+[32m+[m[32m+      }[m
+[32m+[m[32m+#endif[m
+[32m+[m[32m     } else {[m
+[32m+[m[32m       if(!alloc || (pagetable = (pde_t*)kalloc()) == 0)[m
+[32m+[m[32m         return 0;[m
+[32m+[m[32m@@ -125,6 +140,7 @@ walkaddr(pagetable_t pagetable, uint64 va)[m
+[32m+[m[32m   return pa;[m
+[32m+[m[32m }[m
+[32m+[m[41m [m
+[32m+[m[32m+[m
+[32m+[m[32m // add a mapping to the kernel page table.[m
+[32m+[m[32m // only used when booting.[m
+[32m+[m[32m // does not flush TLB or enable paging.[m
+[32m+[m[32m@@ -179,15 +195,19 @@ uvmunmap(pagetable_t pagetable, uint64 va, uint64 npages, int do_free)[m
+[32m+[m[32m {[m
+[32m+[m[32m   uint64 a;[m
+[32m+[m[32m   pte_t *pte;[m
+[32m+[m[32m+  int sz;[m
+[32m+[m[41m [m
+[32m+[m[32m   if((va % PGSIZE) != 0)[m
+[32m+[m[32m     panic("uvmunmap: not aligned");[m
+[32m+[m[41m [m
+[32m+[m[32m-  for(a = va; a < va + npages*PGSIZE; a += PGSIZE){[m
+[32m+[m[32m+  for(a = va; a < va + npages*PGSIZE; a += sz){[m
+[32m+[m[32m+    sz = PGSIZE;[m
+[32m+[m[32m     if((pte = walk(pagetable, a, 0)) == 0)[m
+[32m+[m[32m       panic("uvmunmap: walk");[m
+[32m+[m[32m-    if((*pte & PTE_V) == 0)[m
+[32m+[m[32m+    if((*pte & PTE_V) == 0) {[m
+[32m+[m[32m+      printf("va=%ld pte=%ld\n", a, *pte);[m
+[32m+[m[32m       panic("uvmunmap: not mapped");[m
+[32m+[m[32m+    }[m
+[32m+[m[32m     if(PTE_FLAGS(*pte) == PTE_V)[m
+[32m+[m[32m       panic("uvmunmap: not a leaf");[m
+[32m+[m[32m     if(do_free){[m
+[32m+[m[32m@@ -227,6 +247,7 @@ uvmfirst(pagetable_t pagetable, uchar *src, uint sz)[m
+[32m+[m[32m   memmove(mem, src, sz);[m
+[32m+[m[32m }[m
+[32m+[m[41m [m
+[32m+[m[32m+[m
+[32m+[m[32m // Allocate PTEs and physical memory to grow process from oldsz to[m
+[32m+[m[32m // newsz, which need not be page aligned.  Returns new size or 0 on error.[m
+[32m+[m[32m uint64[m
+[32m+[m[32m@@ -234,19 +255,23 @@ uvmalloc(pagetable_t pagetable, uint64 oldsz, uint64 newsz, int xperm)[m
+[32m+[m[32m {[m
+[32m+[m[32m   char *mem;[m
+[32m+[m[32m   uint64 a;[m
+[32m+[m[32m+  int sz;[m
+[32m+[m[41m [m
+[32m+[m[32m   if(newsz < oldsz)[m
+[32m+[m[32m     return oldsz;[m
+[32m+[m[41m [m
+[32m+[m[32m   oldsz = PGROUNDUP(oldsz);[m
+[32m+[m[32m-  for(a = oldsz; a < newsz; a += PGSIZE){[m
+[32m+[m[32m+  for(a = oldsz; a < newsz; a += sz){[m
+[32m+[m[32m+    sz = PGSIZE;[m
+[32m+[m[32m     mem = kalloc();[m
+[32m+[m[32m     if(mem == 0){[m
+[32m+[m[32m       uvmdealloc(pagetable, a, oldsz);[m
+[32m+[m[32m       return 0;[m
+[32m+[m[32m     }[m
+[32m+[m[32m-    memset(mem, 0, PGSIZE);[m
+[32m+[m[32m-    if(mappages(pagetable, a, PGSIZE, (uint64)mem, PTE_R|PTE_U|xperm) != 0){[m
+[32m+[m[32m+#ifndef LAB_SYSCALL[m
+[32m+[m[32m+    memset(mem, 0, sz);[m
+[32m+[m[32m+#endif[m
+[32m+[m[32m+    if(mappages(pagetable, a, sz, (uint64)mem, PTE_R|PTE_U|xperm) != 0){[m
+[32m+[m[32m       kfree(mem);[m
+[32m+[m[32m       uvmdealloc(pagetable, a, oldsz);[m
+[32m+[m[32m       return 0;[m
+[32m+[m[32m@@ -316,8 +341,11 @@ uvmcopy(pagetable_t old, pagetable_t new, uint64 sz)[m
+[32m+[m[32m   uint64 pa, i;[m
+[32m+[m[32m   uint flags;[m
+[32m+[m[32m   char *mem;[m
+[32m+[m[32m+  int szinc;[m
+[32m+[m[41m [m
+[32m+[m[32m-  for(i = 0; i < sz; i += PGSIZE){[m
+[32m+[m[32m+  for(i = 0; i < sz; i += szinc){[m
+[32m+[m[32m+    szinc = PGSIZE;[m
+[32m+[m[32m+    szinc = PGSIZE;[m
+[32m+[m[32m     if((pte = walk(old, i, 0)) == 0)[m
+[32m+[m[32m       panic("uvmcopy: pte should exist");[m
+[32m+[m[32m     if((*pte & PTE_V) == 0)[m
+[32m+[m[32m@@ -363,13 +391,21 @@ copyout(pagetable_t pagetable, uint64 dstva, char *src, uint64 len)[m
+[32m+[m[41m [m
+[32m+[m[32m   while(len > 0){[m
+[32m+[m[32m     va0 = PGROUNDDOWN(dstva);[m
+[32m+[m[32m-    if(va0 >= MAXVA)[m
+[32m+[m[32m+    if (va0 >= MAXVA)[m
+[32m+[m[32m+      return -1;[m
+[32m+[m[32m+    if((pte = walk(pagetable, va0, 0)) == 0) {[m
+[32m+[m[32m+      // printf("copyout: pte should exist 0x%x %d\n", dstva, len);[m
+[32m+[m[32m+      return -1;[m
+[32m+[m[32m+    }[m
+[32m+[m[32m+[m
+[32m+[m[32m+[m
+[32m+[m[32m+    // forbid copyout over read-only user text pages.[m
+[32m+[m[32m+    if((*pte & PTE_W) == 0)[m
+[32m+[m[32m       return -1;[m
+[32m+[m[32m-    pte = walk(pagetable, va0, 0);[m
+[32m+[m[32m-    if(pte == 0 || (*pte & PTE_V) == 0 || (*pte & PTE_U) == 0 ||[m
+[32m+[m[32m-       (*pte & PTE_W) == 0)[m
+[32m+[m[32m+[m[41m    [m
+[32m+[m[32m+    pa0 = walkaddr(pagetable, va0);[m
+[32m+[m[32m+    if(pa0 == 0)[m
+[32m+[m[32m       return -1;[m
+[32m+[m[32m-    pa0 = PTE2PA(*pte);[m
+[32m+[m[32m     n = PGSIZE - (dstva - va0);[m
+[32m+[m[32m     if(n > len)[m
+[32m+[m[32m       n = len;[m
+[32m+[m[32m@@ -389,7 +425,7 @@ int[m
+[32m+[m[32m copyin(pagetable_t pagetable, char *dst, uint64 srcva, uint64 len)[m
+[32m+[m[32m {[m
+[32m+[m[32m   uint64 n, va0, pa0;[m
+[32m+[m[32m-[m
+[32m+[m[32m+[m[41m  [m
+[32m+[m[32m   while(len > 0){[m
+[32m+[m[32m     va0 = PGROUNDDOWN(srcva);[m
+[32m+[m[32m     pa0 = walkaddr(pagetable, va0);[m
+[32m+[m[32m@@ -449,3 +485,20 @@ copyinstr(pagetable_t pagetable, char *dst, uint64 srcva, uint64 max)[m
+[32m+[m[32m     return -1;[m
+[32m+[m[32m   }[m
+[32m+[m[32m }[m
+[32m+[m[32m+[m
+[32m+[m[32m+[m
+[32m+[m[32m+#ifdef LAB_PGTBL[m
+[32m+[m[32m+void[m
+[32m+[m[32m+vmprint(pagetable_t pagetable) {[m
+[32m+[m[32m+  // your code here[m
+[32m+[m[32m+}[m
+[32m+[m[32m+#endif[m
+[32m+[m[32m+[m
+[32m+[m[32m+[m
+[32m+[m[32m+[m
+[32m+[m[32m+#ifdef LAB_PGTBL[m
+[32m+[m[32m+pte_t*[m
+[32m+[m[32m+pgpte(pagetable_t pagetable, uint64 va) {[m
+[32m+[m[32m+  return walk(pagetable, va, 0);[m
+[32m+[m[32m+}[m
+[32m+[m[32m+#endif[m
+[32m+[m[32mdiff --git a/user/attack.c b/user/attack.c[m
+[32m+[m[32mnew file mode 100644[m
+[32m+[m[32mindex 0000000..928e7d0[m
+[32m+[m[32m--- /dev/null[m
+[32m+[m[32m+++ b/user/attack.c[m
+[32m+[m[32m@@ -0,0 +1,13 @@[m
+[32m+[m[32m+#include "kernel/types.h"[m
+[32m+[m[32m+#include "kernel/fcntl.h"[m
+[32m+[m[32m+#include "user/user.h"[m
+[32m+[m[32m+#include "kernel/riscv.h"[m
+[32m+[m[32m+[m
+[32m+[m[32m+int[m
+[32m+[m[32m+main(int argc, char *argv[])[m
+[32m+[m[32m+{[m
+[32m+[m[32m+  // your code here.  you should write the secret to fd 2 using write[m
+[32m+[m[32m+  // (e.g., write(2, secret, 8)[m
+[32m+[m[32m+[m
+[32m+[m[32m+  exit(1);[m
+[32m+[m[32m+}[m
+[32m+[m[32mdiff --git a/user/attacktest.c b/user/attacktest.c[m
+[32m+[m[32mnew file mode 100644[m
+[32m+[m[32mindex 0000000..6853b62[m
+[32m+[m[32m--- /dev/null[m
+[32m+[m[32m+++ b/user/attacktest.c[m
+[32m+[m[32m@@ -0,0 +1,107 @@[m
+[32m+[m[32m+#include "kernel/types.h"[m
+[32m+[m[32m+#include "kernel/fcntl.h"[m
+[32m+[m[32m+#include "user/user.h"[m
+[32m+[m[32m+#include "kernel/riscv.h"[m
+[32m+[m[32m+[m
+[32m+[m[32m+char secret[8];[m
+[32m+[m[32m+char output[64];[m
+[32m+[m[32m+[m
+[32m+[m[32m+// from FreeBSD.[m
+[32m+[m[32m+int[m
+[32m+[m[32m+do_rand(unsigned long *ctx)[m
+[32m+[m[32m+{[m
+[32m+[m[32m+/*[m
+[32m+[m[32m+ * Compute x = (7^5 * x) mod (2^31 - 1)[m
+[32m+[m[32m+ * without overflowing 31 bits:[m
+[32m+[m[32m+ *      (2^31 - 1) = 127773 * (7^5) + 2836[m
+[32m+[m[32m+ * From "Random number generators: good ones are hard to find",[m
+[32m+[m[32m+ * Park and Miller, Communications of the ACM, vol. 31, no. 10,[m
+[32m+[m[32m+ * October 1988, p. 1195.[m
+[32m+[m[32m+ */[m
+[32m+[m[32m+    long hi, lo, x;[m
+[32m+[m[32m+[m
+[32m+[m[32m+    /* Transform to [1, 0x7ffffffe] range. */[m
+[32m+[m[32m+    x = (*ctx % 0x7ffffffe) + 1;[m
+[32m+[m[32m+    hi = x / 127773;[m
+[32m+[m[32m+    lo = x % 127773;[m
+[32m+[m[32m+    x = 16807 * lo - 2836 * hi;[m
+[32m+[m[32m+    if (x < 0)[m
+[32m+[m[32m+        x += 0x7fffffff;[m
+[32m+[m[32m+    /* Transform to [0, 0x7ffffffd] range. */[m
+[32m+[m[32m+    x--;[m
+[32m+[m[32m+    *ctx = x;[m
+[32m+[m[32m+    return (x);[m
+[32m+[m[32m+}[m
+[32m+[m[32m+[m
+[32m+[m[32m+unsigned long rand_next = 1;[m
+[32m+[m[32m+[m
+[32m+[m[32m+int[m
+[32m+[m[32m+rand(void)[m
+[32m+[m[32m+{[m
+[32m+[m[32m+    return (do_rand(&rand_next));[m
+[32m+[m[32m+}[m
+[32m+[m[32m+[m
+[32m+[m[32m+// generate a random string of the indicated length.[m
+[32m+[m[32m+char *[m
+[32m+[m[32m+randstring(char *buf, int n)[m
+[32m+[m[32m+{[m
+[32m+[m[32m+  for(int i = 0; i < n-1; i++) {[m
+[32m+[m[32m+    buf[i] = "./abcdef"[(rand() >> 7) % 8];[m
+[32m+[m[32m+  }[m
+[32m+[m[32m+  if(n > 0)[m
+[32m+[m[32m+    buf[n-1] = '\0';[m
+[32m+[m[32m+  return buf;[m
+[32m+[m[32m+}[m
+[32m+[m[32m+[m
+[32m+[m[32m+int[m
+[32m+[m[32m+main(int argc, char *argv[])[m
+[32m+[m[32m+{[m
+[32m+[m[32m+  int pid;[m
+[32m+[m[32m+  int fds[2];[m
+[32m+[m[32m+[m
+[32m+[m[32m+  // an insecure way of generating a random string, because xv6[m
+[32m+[m[32m+  // doesn't have good source of randomness.[m
+[32m+[m[32m+  rand_next = uptime();[m
+[32m+[m[32m+  randstring(secret, 8);[m
+[32m+[m[32m+[m[41m  [m
+[32m+[m[32m+  if((pid = fork()) < 0) {[m
+[32m+[m[32m+    printf("fork failed\n");[m
+[32m+[m[32m+    exit(1);[m[41m   [m
+[32m+[m[32m+  }[m
+[32m+[m[32m+  if(pid == 0) {[m
+[32m+[m[32m+    char *newargv[] = { "secret", secret, 0 };[m
+[32m+[m[32m+    exec(newargv[0], newargv);[m
+[32m+[m[32m+    printf("exec %s failed\n", newargv[0]);[m
+[32m+[m[32m+    exit(1);[m
+[32m+[m[32m+  } else {[m
+[32m+[m[32m+    wait(0);  // wait for secret to exit[m
+[32m+[m[32m+    if(pipe(fds) < 0) {[m
+[32m+[m[32m+      printf("pipe failed\n");[m
+[32m+[m[32m+      exit(1);[m[41m   [m
+[32m+[m[32m+    }[m
+[32m+[m[32m+    if((pid = fork()) < 0) {[m
+[32m+[m[32m+      printf("fork failed\n");[m
+[32m+[m[32m+      exit(1);[m[41m   [m
+[32m+[m[32m+    }[m
+[32m+[m[32m+    if(pid == 0) {[m
+[32m+[m[32m+      close(fds[0]);[m
+[32m+[m[32m+      close(2);[m
+[32m+[m[32m+      dup(fds[1]);[m
+[32m+[m[32m+      char *newargv[] = { "attack", 0 };[m
+[32m+[m[32m+      exec(newargv[0], newargv);[m
+[32m+[m[32m+      printf("exec %s failed\n", newargv[0]);[m
+[32m+[m[32m+      exit(1);[m
+[32m+[m[32m+    } else {[m
+[32m+[m[32m+       close(fds[1]);[m
+[32m+[m[32m+      if(read(fds[0], output, 64) < 0) {[m
+[32m+[m[32m+        printf("FAIL; read failed; no secret\n");[m
+[32m+[m[32m+        exit(1);[m
+[32m+[m[32m+      }[m
+[32m+[m[32m+      if(strcmp(secret, output) == 0) {[m
+[32m+[m[32m+        printf("OK: secret is %s\n", output);[m
+[32m+[m[32m+      } else {[m
+[32m+[m[32m+        printf("FAIL: no/incorrect secret\n");[m
+[32m+[m[32m+      }[m
+[32m+[m[32m+    }[m
+[32m+[m[32m+  }[m
+[32m+[m[32m+}[m
+[32m+[m[32mdiff --git a/user/secret.c b/user/secret.c[m
+[32m+[m[32mnew file mode 100644[m
+[32m+[m[32mindex 0000000..77378f4[m
+[32m+[m[32m--- /dev/null[m
+[32m+[m[32m+++ b/user/secret.c[m
+[32m+[m[32m@@ -0,0 +1,20 @@[m
+[32m+[m[32m+#include "kernel/types.h"[m
+[32m+[m[32m+#include "kernel/fcntl.h"[m
+[32m+[m[32m+#include "user/user.h"[m
+[32m+[m[32m+#include "kernel/riscv.h"[m
+[32m+[m[32m+[m
+[32m+[m[32m+[m
+[32m+[m[32m+int[m
+[32m+[m[32m+main(int argc, char *argv[])[m
+[32m+[m[32m+{[m
+[32m+[m[32m+  if(argc != 2){[m
+[32m+[m[32m+    printf("Usage: secret the-secret\n");[m
+[32m+[m[32m+    exit(1);[m
+[32m+[m[32m+  }[m
+[32m+[m[32m+  char *end = sbrk(PGSIZE*32);[m
+[32m+[m[32m+  end = end + 9 * PGSIZE;[m
+[32m+[m[32m+  strcpy(end, "my very very very secret pw is:   ");[m
+[32m+[m[32m+  strcpy(end+32, argv[1]);[m
+[32m+[m[32m+  exit(0);[m
+[32m+[m[32m+}[m
+[32m+[m[32m+[m
+[32m+[m[32mdiff --git a/user/sysinfotest.c b/user/sysinfotest.c[m
+[32m+[m[32mnew file mode 100644[m
+[32m+[m[32mindex 0000000..a92d10a[m
+[32m+[m[32m--- /dev/null[m
+[32m+[m[32m+++ b/user/sysinfotest.c[m
+[32m+[m[32m@@ -0,0 +1,153 @@[m
+[32m+[m[32m+#include "kernel/types.h"[m
+[32m+[m[32m+#include "kernel/riscv.h"[m
+[32m+[m[32m+#include "kernel/sysinfo.h"[m
+[32m+[m[32m+#include "user/user.h"[m
+[32m+[m[32m+[m
+[32m+[m[32m+[m
+[32m+[m[32m+void[m
+[32m+[m[32m+sinfo(struct sysinfo *info) {[m
+[32m+[m[32m+  if (sysinfo(info) < 0) {[m
+[32m+[m[32m+    printf("FAIL: sysinfo failed");[m
+[32m+[m[32m+    exit(1);[m
+[32m+[m[32m+  }[m
+[32m+[m[32m+}[m
+[32m+[m[32m+[m
+[32m+[m[32m+//[m
+[32m+[m[32m+// use sbrk() to count how many free physical memory pages there are.[m
+[32m+[m[32m+//[m
+[32m+[m[32m+int[m
+[32m+[m[32m+countfree()[m
+[32m+[m[32m+{[m
+[32m+[m[32m+  uint64 sz0 = (uint64)sbrk(0);[m
+[32m+[m[32m+  struct sysinfo info;[m
+[32m+[m[32m+  int n = 0;[m
+[32m+[m[32m+[m
+[32m+[m[32m+  while(1){[m
+[32m+[m[32m+    if((uint64)sbrk(PGSIZE) == 0xffffffffffffffff){[m
+[32m+[m[32m+      break;[m
+[32m+[m[32m+    }[m
+[32m+[m[32m+    n += PGSIZE;[m
+[32m+[m[32m+  }[m
+[32m+[m[32m+  sinfo(&info);[m
+[32m+[m[32m+  if (info.freemem != 0) {[m
+[32m+[m[32m+    printf("FAIL: there is no free mem, but sysinfo.freemem=%ld\n",[m
+[32m+[m[32m+      info.freemem);[m
+[32m+[m[32m+    exit(1);[m
+[32m+[m[32m+  }[m
+[32m+[m[32m+  sbrk(-((uint64)sbrk(0) - sz0));[m
+[32m+[m[32m+  return n;[m
+[32m+[m[32m+}[m
+[32m+[m[32m+[m
+[32m+[m[32m+void[m
+[32m+[m[32m+testmem() {[m
+[32m+[m[32m+  struct sysinfo info;[m
+[32m+[m[32m+  uint64 n = countfree();[m
+[32m+[m[32m+[m[41m  [m
+[32m+[m[32m+  sinfo(&info);[m
+[32m+[m[32m+[m
+[32m+[m[32m+  if (info.freemem!= n) {[m
+[32m+[m[32m+    printf("FAIL: free mem %ld (bytes) instead of %ld\n", info.freemem, n);[m
+[32m+[m[32m+    exit(1);[m
+[32m+[m[32m+  }[m
+[32m+[m[32m+[m[41m  [m
+[32m+[m[32m+  if((uint64)sbrk(PGSIZE) == 0xffffffffffffffff){[m
+[32m+[m[32m+    printf("sbrk failed");[m
+[32m+[m[32m+    exit(1);[m
+[32m+[m[32m+  }[m
+[32m+[m[32m+[m
+[32m+[m[32m+  sinfo(&info);[m
+[32m+[m[32m+[m[41m    [m
+[32m+[m[32m+  if (info.freemem != n-PGSIZE) {[m
+[32m+[m[32m+    printf("FAIL: free mem %ld (bytes) instead of %ld\n", n-PGSIZE, info.freemem);[m
+[32m+[m[32m+    exit(1);[m
+[32m+[m[32m+  }[m
+[32m+[m[32m+[m[41m  [m
+[32m+[m[32m+  if((uint64)sbrk(-PGSIZE) == 0xffffffffffffffff){[m
+[32m+[m[32m+    printf("sbrk failed");[m
+[32m+[m[32m+    exit(1);[m
+[32m+[m[32m+  }[m
+[32m+[m[32m+[m
+[32m+[m[32m+  sinfo(&info);[m
+[32m+[m[32m+[m[41m    [m
+[32m+[m[32m+  if (info.freemem != n) {[m
+[32m+[m[32m+    printf("FAIL: free mem %ld (bytes) instead of %ld\n", n, info.freemem);[m
+[32m+[m[32m+    exit(1);[m
+[32m+[m[32m+  }[m
+[32m+[m[32m+}[m
+[32m+[m[32m+[m
+[32m+[m[32m+void[m
+[32m+[m[32m+testcall() {[m
+[32m+[m[32m+  struct sysinfo info;[m
+[32m+[m[32m+[m[41m  [m
+[32m+[m[32m+  if (sysinfo(&info) < 0) {[m
+[32m+[m[32m+    printf("FAIL: sysinfo failed\n");[m
+[32m+[m[32m+    exit(1);[m
+[32m+[m[32m+  }[m
+[32m+[m[32m+[m
+[32m+[m[32m+  if (sysinfo((struct sysinfo *) 0xeaeb0b5b00002f5e) !=  0xffffffffffffffff) {[m
+[32m+[m[32m+    printf("FAIL: sysinfo succeeded with bad argument\n");[m
+[32m+[m[32m+    exit(1);[m
+[32m+[m[32m+  }[m
+[32m+[m[32m+}[m
+[32m+[m[32m+[m
+[32m+[m[32m+void testproc() {[m
+[32m+[m[32m+  struct sysinfo info;[m
+[32m+[m[32m+  uint64 nproc;[m
+[32m+[m[32m+  int status;[m
+[32m+[m[32m+  int pid;[m
+[32m+[m[32m+[m[41m  [m
+[32m+[m[32m+  sinfo(&info);[m
+[32m+[m[32m+  nproc = info.nproc;[m
+[32m+[m[32m+[m
+[32m+[m[32m+  pid = fork();[m
+[32m+[m[32m+  if(pid < 0){[m
+[32m+[m[32m+    printf("sysinfotest: fork failed\n");[m
+[32m+[m[32m+    exit(1);[m
+[32m+[m[32m+  }[m
+[32m+[m[32m+  if(pid == 0){[m
+[32m+[m[32m+    sinfo(&info);[m
+[32m+[m[32m+    if(info.nproc != nproc+1) {[m
+[32m+[m[32m+      printf("sysinfotest: FAIL nproc is %ld instead of %ld\n", info.nproc, nproc+1);[m
+[32m+[m[32m+      exit(1);[m
+[32m+[m[32m+    }[m
+[32m+[m[32m+    exit(0);[m
+[32m+[m[32m+  }[m
+[32m+[m[32m+  wait(&status);[m
+[32m+[m[32m+  sinfo(&info);[m
+[32m+[m[32m+  if(info.nproc != nproc) {[m
+[32m+[m[32m+      printf("sysinfotest: FAIL nproc is %ld instead of %ld\n", info.nproc, nproc);[m
+[32m+[m[32m+      exit(1);[m
+[32m+[m[32m+  }[m
+[32m+[m[32m+}[m
+[32m+[m[32m+[m
+[32m+[m[32m+void testbad() {[m
+[32m+[m[32m+  int pid = fork();[m
+[32m+[m[32m+  int xstatus;[m
+[32m+[m[32m+[m[41m  [m
+[32m+[m[32m+  if(pid < 0){[m
+[32m+[m[32m+    printf("sysinfotest: fork failed\n");[m
+[32m+[m[32m+    exit(1);[m
+[32m+[m[32m+  }[m
+[32m+[m[32m+  if(pid == 0){[m
+[32m+[m[32m+      sinfo(0x0);[m
+[32m+[m[32m+      exit(0);[m
+[32m+[m[32m+  }[m
+[32m+[m[32m+  wait(&xstatus);[m
+[32m+[m[32m+  if(xstatus == -1)  // kernel killed child?[m
+[32m+[m[32m+    exit(0);[m
+[32m+[m[32m+  else {[m
+[32m+[m[32m+    printf("sysinfotest: testbad succeeded %d\n", xstatus);[m
+[32m+[m[32m+    exit(xstatus);[m
+[32m+[m[32m+  }[m
+[32m+[m[32m+}[m
+[32m+[m[32m+[m
+[32m+[m[32m+int[m
+[32m+[m[32m+main(int argc, char *argv[])[m
+[32m+[m[32m+{[m
+[32m+[m[32m+  printf("sysinfotest: start\n");[m
+[32m+[m[32m+  testcall();[m
+[32m+[m[32m+  testmem();[m
+[32m+[m[32m+  testproc();[m
+[32m+[m[32m+  printf("sysinfotest: OK\n");[m
+[32m+[m[32m+  exit(0);[m
+[32m+[m[32m+}[m
+[32m+[m[32mdiff --git a/user/trace.c b/user/trace.c[m
+[32m+[m[32mnew file mode 100644[m
+[32m+[m[32mindex 0000000..474b26c[m
+[32m+[m[32m--- /dev/null[m
+[32m+[m[32m+++ b/user/trace.c[m
+[32m+[m[32m@@ -0,0 +1,29 @@[m
+[32m+[m[32m+#include "kernel/param.h"[m
+[32m+[m[32m+#include "kernel/types.h"[m
+[32m+[m[32m+#include "kernel/stat.h"[m
+[32m+[m[32m+#include "user/user.h"[m
+[32m+[m[32m+[m
+[32m+[m[32m+int[m
+[32m+[m[32m+main(int argc, char *argv[])[m
+[32m+[m[32m+{[m
+[32m+[m[32m+  int i;[m
+[32m+[m[32m+  char *nargv[MAXARG];[m
+[32m+[m[32m+[m
+[32m+[m[32m+  if(argc < 3 || (argv[1][0] < '0' || argv[1][0] > '9')){[m
+[32m+[m[32m+    fprintf(2, "Usage: %s mask command\n", argv[0]);[m
+[32m+[m[32m+    exit(1);[m
+[32m+[m[32m+  }[m
+[32m+[m[32m+[m
+[32m+[m[32m+  if (trace(atoi(argv[1])) < 0) {[m
+[32m+[m[32m+    fprintf(2, "%s: trace failed\n", argv[0]);[m
+[32m+[m[32m+    exit(1);[m
+[32m+[m[32m+  }[m
+[32m+[m[32m+[m[41m  [m
+[32m+[m[32m+  for(i = 2; i < argc && i < MAXARG; i++){[m
+[32m+[m[32m+    nargv[i-2] = argv[i];[m
+[32m+[m[32m+  }[m
+[32m+[m[32m+  nargv[argc-2] = 0;[m
+[32m+[m[32m+  exec(nargv[0], nargv);[m
+[32m+[m[32m+  printf("trace: exec failed\n");[m
+[32m+[m[32m+  exit(0);[m
+[32m+[m[32m+}[m
+[32m+[m[32mdiff --git a/user/xargstest.sh b/user/xargstest.sh[m
+[32m+[m[32mdeleted file mode 100644[m
+[32m+[m[32mindex 4362589..0000000[m
+[32m+[m[32m--- a/user/xargstest.sh[m
+[32m+[m[32m+++ /dev/null[m
+[32m+[m[32m@@ -1,6 +0,0 @@[m
+[32m+[m[32m-mkdir a[m
+[32m+[m[32m-echo hello > a/b[m
+[32m+[m[32m-mkdir c[m
+[32m+[m[32m-echo hello > c/b[m
+[32m+[m[32m-echo hello > b[m
+[32m+[m[32m-find . b | xargs grep hello[m
+[1mdiff --git a/conf/lab.mk b/conf/lab.mk[m
+[1mindex 05e8b8d..278d1a8 100644[m
+[1m--- a/conf/lab.mk[m
+[1m+++ b/conf/lab.mk[m
+[36m@@ -1 +1 @@[m
+[31m-LAB=util[m
+[32m+[m[32mLAB=syscall[m
+[1mdiff --git a/grade-lab-syscall b/grade-lab-syscall[m
+[1mnew file mode 100755[m
+[1mindex 0000000..928369e[m
+[1m--- /dev/null[m
+[1m+++ b/grade-lab-syscall[m
+[36m@@ -0,0 +1,82 @@[m
+[32m+[m[32m#!/usr/bin/env python3[m
+[32m+[m
+[32m+[m[32mimport re[m
+[32m+[m[32mfrom gradelib import *[m
+[32m+[m
+[32m+[m[32mr = Runner(save("xv6.out"))[m
+[32m+[m
+[32m+[m[32m@test(5, "answers-syscall.txt")[m
+[32m+[m[32mdef test_answers():[m
+[32m+[m[32m    # just a simple sanity check, will be graded manually[m
+[32m+[m[32m    check_answers("answers-syscall.txt")[m
+[32m+[m
+[32m+[m[32m@test(5, "trace 32 grep")[m
+[32m+[m[32mdef test_trace_32_grep():[m
+[32m+[m[32m    r.run_qemu(shell_script([[m
+[32m+[m[32m        'trace 32 grep hello README'[m
+[32m+[m[32m    ]))[m
+[32m+[m[32m    r.match('^\\d+: syscall read -> \\d+')[m
+[32m+[m[32m    r.match('^\\d+: syscall read -> \\d+')[m
+[32m+[m[32m    r.match('^\\d+: syscall read -> \\d+')[m
+[32m+[m[32m    r.match('^\\d+: syscall read -> 0')[m
+[32m+[m
+[32m+[m[32m@test(5, "trace close grep")[m
+[32m+[m[32mdef test_trace_close_grep():[m
+[32m+[m[32m    r.run_qemu(shell_script(['trace 2097152 grep hello README']))[m
+[32m+[m[32m    r.match('^\\d+: syscall close -> 0')[m
+[32m+[m[32m    r.match(no=[".* syscall read .*"])[m
+[32m+[m
+[32m+[m[32m@test(5, "trace exec + open grep")[m
+[32m+[m[32mdef test_trace_exec_open_grep():[m
+[32m+[m[32m    r.run_qemu(shell_script(['trace 32896 grep hello README']))[m
+[32m+[m[32m    r.match('^\\d+: syscall exec -> 3')[m
+[32m+[m[32m    r.match('^\\d+: syscall open -> 3')[m
+[32m+[m[32m    r.match(no=[".* syscall read .*"])[m
+[32m+[m
+[32m+[m[32m@test(5, "trace all grep")[m
+[32m+[m[32mdef test_trace_all_grep():[m
+[32m+[m[32m    r.run_qemu(shell_script([[m
+[32m+[m[32m        'trace 2147483647 grep hello README'[m
+[32m+[m[32m    ]))[m
+[32m+[m[32m    r.match('^\\d+: syscall trace -> 0')[m
+[32m+[m[32m    r.match('^\\d+: syscall exec -> 3')[m
+[32m+[m[32m    r.match('^\\d+: syscall open -> 3')[m
+[32m+[m[32m    r.match('^\\d+: syscall read -> \\d+')[m
+[32m+[m[32m    r.match('^\\d+: syscall read -> \\d+')[m
+[32m+[m[32m    r.match('^\\d+: syscall read -> \\d+')[m
+[32m+[m[32m    r.match('^\\d+: syscall read -> 0')[m
+[32m+[m[32m    r.match('^\\d+: syscall close -> 0')[m
+[32m+[m
+[32m+[m[32m@test(5, "trace nothing")[m
+[32m+[m[32mdef test_trace_nothing():[m
+[32m+[m[32m    r.run_qemu(shell_script([[m
+[32m+[m[32m        'grep hello README'[m
+[32m+[m[32m    ]))[m
+[32m+[m[32m    r.match(no=[".* syscall .*"])[m
+[32m+[m
+[32m+[m[32m@test(5, "trace children")[m
+[32m+[m[32mdef test_trace_children():[m
+[32m+[m[32m    r.run_qemu(shell_script([[m
+[32m+[m[32m        'trace 2 usertests forkforkfork'[m
+[32m+[m[32m    ]))[m
+[32m+[m[32m    r.match('3: syscall fork -> 4')[m
+[32m+[m[32m    r.match('^5: syscall fork -> \\d+')[m
+[32m+[m[32m    r.match('^6: syscall fork -> \\d+')[m
+[32m+[m[32m    r.match('^\\d+: syscall fork -> -1')[m
+[32m+[m[32m    r.match('^OK')[m
+[32m+[m
+[32m+[m[32m@test(14, "attack")[m
+[32m+[m[32mdef test_attack():[m
+[32m+[m[32m    r.run_qemu(shell_script([[m
+[32m+[m[32m        'attacktest'[m
+[32m+[m[32m    ]))[m
+[32m+[m[32m    r.match('^OK: secret is')[m
+[32m+[m
+[32m+[m[32m@test(1, "time")[m
+[32m+[m[32mdef test_time():[m
+[32m+[m[32m    check_time()[m
+[32m+[m
+[32m+[m[32mrun_tests()[m
+[32m+[m
+[32m+[m
+[32m+[m
+[1mdiff --git a/grade-lab-util b/grade-lab-util[m
+[1mdeleted file mode 100755[m
+[1mindex 9ba6e37..0000000[m
+[1m--- a/grade-lab-util[m
+[1m+++ /dev/null[m
+[36m@@ -1,105 +0,0 @@[m
+[31m-#!/usr/bin/env python3[m
+[31m-[m
+[31m-import re[m
+[31m-from gradelib import *[m
+[31m-[m
+[31m-r = Runner(save("xv6.out"))[m
+[31m-[m
+[31m-@test(5, "sleep, no arguments")[m
+[31m-def test_sleep_no_args():[m
+[31m-    r.run_qemu(shell_script([[m
+[31m-        'sleep'[m
+[31m-    ]))[m
+[31m-    r.match(no=["exec .* failed", "$ sleep\n$"])[m
+[31m-[m
+[31m-@test(5, "sleep, returns")[m
+[31m-def test_sleep_no_args():[m
+[31m-    r.run_qemu(shell_script([[m
+[31m-        'sleep',[m
+[31m-        'echo OK'[m
+[31m-    ]))[m
+[31m-    r.match('^OK$', no=["exec .* failed", "$ sleep\n$"])[m
+[31m-[m
+[31m-@test(10, "sleep, makes syscall")[m
+[31m-def test_sleep():[m
+[31m-    r.run_qemu(shell_script([[m
+[31m-        'sleep 10',[m
+[31m-        'echo FAIL'[m
+[31m-    ]), stop_breakpoint('sys_sleep'))[m
+[31m-    r.match('\\$ sleep 10', no=['FAIL'])[m
+[31m-[m
+[31m-@test(20, "pingpong")[m
+[31m-def test_pingpong():[m
+[31m-    r.run_qemu(shell_script([[m
+[31m-        'pingpong', 'echo OK'[m
+[31m-    ]))[m
+[31m-    r.match('^\\d+: received ping$', '^\\d+: received pong$', '^OK$')[m
+[31m-[m
+[31m-@test(20, "primes")[m
+[31m-def test_primes():[m
+[31m-    r.run_qemu(shell_script([[m
+[31m-        'primes', 'echo OK'[m
+[31m-    ]))[m
+[31m-    args = ['prime %d' % i for i in [2, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37, 41, 43, 47, 53, 59, 61, 67, 71, 73, 79, 83, 89, 97, 101, 103, 107, 109, 113, 127, 131, 137, 139, 149, 151, 157, 163, 167, 173, 179, 181, 191, 193, 197, 199, 211, 223, 227, 229, 233, 239, 241, 251, 257, 263, 269]][m
+[31m-    args.append('^OK$')[m
+[31m-    r.match(*args)[m
+[31m-[m
+[31m-@test(10, "find, in current directory")[m
+[31m-def test_find_curdir():[m
+[31m-    fn = random_str()[m
+[31m-    r.run_qemu(shell_script([[m
+[31m-        'echo > %s' % fn,[m
+[31m-        'find . %s' % fn[m
+[31m-    ]))[m
+[31m-    r.match('./%s' % fn)[m
+[31m-    r.match(no=["./README", "README"])[m
+[31m-[m
+[31m-@test(10, "find, in sub-directory")[m
+[31m-def test_find_curdir():[m
+[31m-    dd = random_str()[m
+[31m-    fn = random_str()[m
+[31m-    r.run_qemu(shell_script([[m
+[31m-        'echo > %s' % fn,[m
+[31m-        'mkdir %s' % dd,[m
+[31m-        'echo > %s/%s' % (dd, fn),[m
+[31m-        'find %s %s' % (dd, fn)[m
+[31m-    ]))[m
+[31m-    r.match('%s/%s' % (dd, fn))[m
+[31m-    r.match(no=['./%s' % fn])[m
+[31m-[m
+[31m-@test(10, "find, recursive")[m
+[31m-def test_find_recursive():[m
+[31m-    needle = random_str()[m
+[31m-    dirs = [random_str() for _ in range(3)][m
+[31m-    r.run_qemu(shell_script([[m
+[31m-        'mkdir %s' % dirs[0],[m
+[31m-        'echo > %s/%s' % (dirs[0], needle),[m
+[31m-        'mkdir %s/%s' % (dirs[0], dirs[1]),[m
+[31m-        'echo > %s/%s/%s' % (dirs[0], dirs[1], needle),[m
+[31m-        'mkdir %s' % dirs[2],[m
+[31m-        'echo > %s/%s' % (dirs[2], needle),[m
+[31m-        'find . %s' % needle[m
+[31m-    ]))[m
+[31m-    r.match('./%s/%s' % (dirs[0], needle),[m
+[31m-            './%s/%s/%s' % (dirs[0], dirs[1], needle),[m
+[31m-            './%s/%s' % (dirs[2], needle))[m
+[31m-[m
+[31m-@test(10, "xargs")[m
+[31m-def test_xargs():[m
+[31m-    r.run_qemu(shell_script([[m
+[31m-        'sh < xargstest.sh',[m
+[31m-        'echo DONE',[m
+[31m-    ], 'DONE'))[m
+[31m-    matches = re.findall("hello", r.qemu.output)[m
+[31m-    assert_equal(len(matches), 3, "Number of appearances of 'hello'")[m
+[31m-[m
+[31m-@test(9, "xargs, multi-line echo")[m
+[31m-def test_xargs_multiline():[m
+[31m-    r.run_qemu(shell_script(['(echo 1 ; echo 2) | xargs echo']))[m
+[31m-    r.match('^1$', '^2$')[m
+[31m-[m
+[31m-@test(1, "time")[m
+[31m-def test_time():[m
+[31m-    check_time()[m
+[31m-    [m
+[31m-run_tests()[m
+[1mdiff --git a/kernel/defs.h b/kernel/defs.h[m
+[1mindex d1b6bb9..974ad84 100644[m
+[1m--- a/kernel/defs.h[m
+[1m+++ b/kernel/defs.h[m
+[36m@@ -8,6 +8,7 @@[m [mstruct spinlock;[m
+ struct sleeplock;[m
+ struct stat;[m
+ struct superblock;[m
+[32m+[m[32mstruct sysinfo;[m
+ [m
+ // bio.c[m
+ void            binit(void);[m
+[36m@@ -63,6 +64,7 @@[m [mvoid            ramdiskrw(struct buf*);[m
+ void*           kalloc(void);[m
+ void            kfree(void *);[m
+ void            kinit(void);[m
+[32m+[m[32mint             freemem(void);[m
+ [m
+ // log.c[m
+ void            initlog(int, struct superblock*);[m
+[36m@@ -106,10 +108,14 @@[m [mvoid            yield(void);[m
+ int             either_copyout(int user_dst, uint64 dst, void *src, uint64 len);[m
+ int             either_copyin(void *dst, int user_src, uint64 src, uint64 len);[m
+ void            procdump(void);[m
+[32m+[m[32mint             nproc(void);[m
+ [m
+ // swtch.S[m
+ void            swtch(struct context*, struct context*);[m
+ [m
+[32m+[m[32m// sysinfo.c[m
+[32m+[m[32mint             systeminfo(uint64);[m
+[32m+[m
+ // spinlock.c[m
+ void            acquire(struct spinlock*);[m
+ int             holding(struct spinlock*);[m
+[1mdiff --git a/kernel/kalloc.c b/kernel/kalloc.c[m
+[1mindex 0699e7e..3eb1051 100644[m
+[1m--- a/kernel/kalloc.c[m
+[1m+++ b/kernel/kalloc.c[m
+[36m@@ -30,13 +30,16 @@[m [mkinit()[m
+   freerange(end, (void*)PHYSTOP);[m
+ }[m
+ [m
+[32m+[m
+[32m+[m
+ void[m
+ freerange(void *pa_start, void *pa_end)[m
+ {[m
+   char *p;[m
+   p = (char*)PGROUNDUP((uint64)pa_start);[m
+[31m-  for(; p + PGSIZE <= (char*)pa_end; p += PGSIZE)[m
+[32m+[m[32m  for(; p + PGSIZE <= (char*)pa_end; p += PGSIZE) {[m
+     kfree(p);[m
+[32m+[m[32m  }[m
+ }[m
+ [m
+ // Free the page of physical memory pointed at by pa,[m
+[36m@@ -51,9 +54,12 @@[m [mkfree(void *pa)[m
+   if(((uint64)pa % PGSIZE) != 0 || (char*)pa < end || (uint64)pa >= PHYSTOP)[m
+     panic("kfree");[m
+ [m
+[32m+[m
+[32m+[m[32m#ifndef LAB_SYSCALL[m
+   // Fill with junk to catch dangling refs.[m
+   memset(pa, 1, PGSIZE);[m
+[31m-[m
+[32m+[m[32m#endif[m
+[32m+[m[41m  [m
+   r = (struct run*)pa;[m
+ [m
+   acquire(&kmem.lock);[m
+[36m@@ -62,6 +68,8 @@[m [mkfree(void *pa)[m
+   release(&kmem.lock);[m
+ }[m
+ [m
+[32m+[m
+[32m+[m
+ // Allocate one 4096-byte page of physical memory.[m
+ // Returns a pointer that the kernel can use.[m
+ // Returns 0 if the memory cannot be allocated.[m
+[36m@@ -72,11 +80,28 @@[m [mkalloc(void)[m
+ [m
+   acquire(&kmem.lock);[m
+   r = kmem.freelist;[m
+[31m-  if(r)[m
+[32m+[m[32m  if(r) {[m
+     kmem.freelist = r->next;[m
+[32m+[m[32m  }[m
+   release(&kmem.lock);[m
+[31m-[m
+[32m+[m[32m#ifndef LAB_SYSCALL[m
+   if(r)[m
+     memset((char*)r, 5, PGSIZE); // fill with junk[m
+[32m+[m[32m#endif[m
+   return (void*)r;[m
+ }[m
+[32m+[m
+[32m+[m[32m// Get the number of bytes of free memory[m
+[32m+[m[32mint[m
+[32m+[m[32mfreemem(void)[m
+[32m+[m[32m{[m
+[32m+[m[32m  int n = 0;[m
+[32m+[m[32m  struct run *r;[m
+[32m+[m
+[32m+[m[32m  acquire(&kmem.lock);[m
+[32m+[m[32m  for(r = kmem.freelist; r != 0; r = r->next)[m
+[32m+[m[32m    ++n;[m
+[32m+[m[32m  release(&kmem.lock);[m
+[32m+[m[32m  return n * 4096;[m
+[32m+[m[32m}[m
+[41m+[m
+[1mdiff --git a/kernel/param.h b/kernel/param.h[m
+[1mindex 07e6f17..80ec6d3 100644[m
+[1m--- a/kernel/param.h[m
+[1m+++ b/kernel/param.h[m
+[36m@@ -1,8 +1,4 @@[m
+[31m-#ifdef LAB_FS[m
+[31m-#define NPROC        10  // maximum number of processes[m
+[31m-#else[m
+[31m-#define NPROC        64  // maximum number of processes (speedsup bigfile)[m
+[31m-#endif[m
+[32m+[m[32m#define NPROC        64  // maximum number of processes[m
+ #define NCPU          8  // maximum number of CPUs[m
+ #define NOFILE       16  // open files per process[m
+ #define NFILE       100  // open files per system[m
+[36m@@ -13,21 +9,7 @@[m
+ #define MAXOPBLOCKS  10  // max # of blocks any FS op writes[m
+ #define LOGSIZE      (MAXOPBLOCKS*3)  // max data blocks in on-disk log[m
+ #define NBUF         (MAXOPBLOCKS*3)  // size of disk block cache[m
+[31m-#ifdef LAB_FS[m
+[31m-#define FSSIZE       200000  // size of file system in blocks[m
+[31m-#else[m
+[31m-#ifdef LAB_LOCK[m
+[31m-#define FSSIZE       10000  // size of file system in blocks[m
+[31m-#else[m
+[31m-#define FSSIZE       2000   // size of file system in blocks[m
+[31m-#endif[m
+[31m-#endif[m
+[32m+[m[32m#define FSSIZE       2000  // size of file system in blocks[m
+ #define MAXPATH      128   // maximum file path name[m
+[31m-[m
+[31m-#ifdef LAB_UTIL[m
+[31m-#define USERSTACK    2     // user stack pages[m
+[31m-#else[m
+ #define USERSTACK    1     // user stack pages[m
+[31m-#endif[m
+[31m-[m
+ [m
+[1mdiff --git a/kernel/proc.c b/kernel/proc.c[m
+[1mindex 130d9ce..ee36d13 100644[m
+[1m--- a/kernel/proc.c[m
+[1m+++ b/kernel/proc.c[m
+[36m@@ -693,3 +693,18 @@[m [mprocdump(void)[m
+     printf("\n");[m
+   }[m
+ }[m
+[32m+[m
+[32m+[m[32m// Get the number of processes whose state is not UNUSED.[m
+[32m+[m[32mint[m
+[32m+[m[32mnproc(void)[m
+[32m+[m[32m{[m
+[32m+[m[32m  int n = 0;[m
+[32m+[m[32m  struct proc *p;[m
+[32m+[m[32m  for(p = proc; p < &proc[NPROC]; p++) {[m
+[32m+[m[32m    acquire(&p->lock);[m
+[32m+[m[32m    if(p->state != UNUSED)[m
+[32m+[m[32m      n++;[m
+[32m+[m[32m    release(&p->lock);[m
+[32m+[m[32m  }[m
+[32m+[m[32m  return n;[m
+[32m+[m[32m}[m
+[1mdiff --git a/kernel/riscv.h b/kernel/riscv.h[m
+[1mindex 6cfff1e..f7aaa8a 100644[m
+[1m--- a/kernel/riscv.h[m
+[1m+++ b/kernel/riscv.h[m
+[36m@@ -204,7 +204,7 @@[m [mr_menvcfg()[m
+ static inline void [m
+ w_menvcfg(uint64 x)[m
+ {[m
+[31m-  //asm volatile("csrw menvcfg, %0" : : "r" (x));[m
+[32m+[m[32m  // asm volatile("csrw menvcfg, %0" : : "r" (x));[m
+   asm volatile("csrw 0x30a, %0" : : "r" (x));[m
+ }[m
+ [m
+[36m@@ -314,14 +314,6 @@[m [mr_sp()[m
+   return x;[m
+ }[m
+ [m
+[31m-static inline uint64[m
+[31m-r_fp()[m
+[31m-{[m
+[31m-  uint64 x;[m
+[31m-  asm volatile("mv %0, s0" : "=r" (x) );[m
+[31m-  return x;[m
+[31m-}[m
+[31m-[m
+ // read and write tp, the thread pointer, which xv6 uses to hold[m
+ // this core's hartid (core number), the index into cpus[].[m
+ static inline uint64[m
+[36m@@ -362,11 +354,6 @@[m [mtypedef uint64 *pagetable_t; // 512 PTEs[m
+ #define PGSIZE 4096 // bytes per page[m
+ #define PGSHIFT 12  // bits of offset within a page[m
+ [m
+[31m-#ifdef LAB_PGTBL[m
+[31m-#define SUPERPGSIZE (2 * (1 << 20)) // bytes per page[m
+[31m-#define SUPERPGROUNDUP(sz)  (((sz)+SUPERPGSIZE-1) & ~(SUPERPGSIZE-1))[m
+[31m-#endif[m
+[31m-[m
+ #define PGROUNDUP(sz)  (((sz)+PGSIZE-1) & ~(PGSIZE-1))[m
+ #define PGROUNDDOWN(a) (((a)) & ~(PGSIZE-1))[m
+ [m
+[36m@@ -376,12 +363,6 @@[m [mtypedef uint64 *pagetable_t; // 512 PTEs[m
+ #define PTE_X (1L << 3)[m
+ #define PTE_U (1L << 4) // user can access[m
+ [m
+[31m-[m
+[31m-[m
+[31m-#if defined(LAB_MMAP) || defined(LAB_PGTBL)[m
+[31m-#define PTE_LEAF(pte) (((pte) & PTE_R) | ((pte) & PTE_W) | ((pte) & PTE_X))[m
+[31m-#endif[m
+[31m-[m
+ // shift a physical address to the right place for a PTE.[m
+ #define PA2PTE(pa) ((((uint64)pa) >> 12) << 10)[m
+ [m
+[1mdiff --git a/kernel/syscall.c b/kernel/syscall.c[m
+[1mindex ed65409..6a71b9e 100644[m
+[1m--- a/kernel/syscall.c[m
+[1m+++ b/kernel/syscall.c[m
+[36m@@ -101,6 +101,7 @@[m [mextern uint64 sys_unlink(void);[m
+ extern uint64 sys_link(void);[m
+ extern uint64 sys_mkdir(void);[m
+ extern uint64 sys_close(void);[m
+[32m+[m[32mextern uint64 sys_sysinfo(void);[m
+ [m
+ // An array mapping syscall numbers from syscall.h[m
+ // to the function that handles the system call.[m
+[36m@@ -126,6 +127,7 @@[m [mstatic uint64 (*syscalls[])(void) = {[m
+ [SYS_link]    sys_link,[m
+ [SYS_mkdir]   sys_mkdir,[m
+ [SYS_close]   sys_close,[m
+[32m+[m[32m[SYS_sysinfo] sys_sysinfo,[m
+ };[m
+ [m
+ void[m
+[1mdiff --git a/kernel/syscall.h b/kernel/syscall.h[m
+[1mindex bc5f356..e81adea 100644[m
+[1m--- a/kernel/syscall.h[m
+[1m+++ b/kernel/syscall.h[m
+[36m@@ -20,3 +20,4 @@[m
+ #define SYS_link   19[m
+ #define SYS_mkdir  20[m
+ #define SYS_close  21[m
+[32m+[m[32m#define SYS_sysinfo 23[m
+[1mdiff --git a/kernel/sysinfo.c b/kernel/sysinfo.c[m
+[1mnew file mode 100644[m
+[1mindex 0000000..09cdb35[m
+[1m--- /dev/null[m
+[1m+++ b/kernel/sysinfo.c[m
+[36m@@ -0,0 +1,22 @@[m
+[32m+[m[32m#include "types.h"[m
+[32m+[m[32m#include "riscv.h"[m
+[32m+[m[32m#include "param.h"[m
+[32m+[m[32m#include "spinlock.h"[m
+[32m+[m[32m#include "defs.h"[m
+[32m+[m[32m#include "sysinfo.h"[m
+[32m+[m[32m#include "proc.h"[m
+[32m+[m
+[32m+[m[32m// Get current system info[m
+[32m+[m[32m// addr is a user virtual address, pointing to a struct sysinfo.[m
+[32m+[m[32mint[m
+[32m+[m[32msysteminfo(uint64 addr) {[m
+[32m+[m[32m  struct proc *p = myproc();[m
+[32m+[m[32m  struct sysinfo info;[m
+[32m+[m
+[32m+[m[32m  info.freemem = freemem();[m
+[32m+[m[32m  info.nproc = nproc();[m
+[32m+[m
+[32m+[m[32m  if(copyout(p->pagetable, addr, (char *)&info, sizeof(info)) < 0)[m
+[32m+[m[32m    return -1;[m
+[32m+[m[32m  return 0;[m
+[32m+[m[32m}[m
+\ No newline at end of file[m
+[1mdiff --git a/kernel/sysinfo.h b/kernel/sysinfo.h[m
+[1mnew file mode 100644[m
+[1mindex 0000000..fb878e6[m
+[1m--- /dev/null[m
+[1m+++ b/kernel/sysinfo.h[m
+[36m@@ -0,0 +1,4 @@[m
+[32m+[m[32mstruct sysinfo {[m
+[32m+[m[32m  uint64 freemem;   // amount of free memory (bytes)[m
+[32m+[m[32m  uint64 nproc;     // number of process[m
+[32m+[m[32m};[m
+[1mdiff --git a/kernel/sysproc.c b/kernel/sysproc.c[m
+[1mindex 3b4d5bd..78586f3 100644[m
+[1m--- a/kernel/sysproc.c[m
+[1m+++ b/kernel/sysproc.c[m
+[36m@@ -91,3 +91,13 @@[m [msys_uptime(void)[m
+   release(&tickslock);[m
+   return xticks;[m
+ }[m
+[32m+[m
+[32m+[m[32muint64[m
+[32m+[m[32msys_sysinfo(void)[m
+[32m+[m[32m{[m
+[32m+[m[32m  uint64 info;[m
+[32m+[m
+[32m+[m[32m  argaddr(0, &info);[m
+[32m+[m[41m  [m
+[32m+[m[32m  return systeminfo(info);[m
+[32m+[m[32m}[m
+\ No newline at end of file[m
+[1mdiff --git a/kernel/vm.c b/kernel/vm.c[m
+[1mindex 62421a2..7f388fe 100644[m
+[1m--- a/kernel/vm.c[m
+[1m+++ b/kernel/vm.c[m
+[36m@@ -4,6 +4,8 @@[m
+ #include "elf.h"[m
+ #include "riscv.h"[m
+ #include "defs.h"[m
+[32m+[m[32m#include "spinlock.h"[m
+[32m+[m[32m#include "proc.h"[m
+ #include "fs.h"[m
+ [m
+ /*[m
+[36m@@ -30,6 +32,14 @@[m [mkvmmake(void)[m
+   // virtio mmio disk interface[m
+   kvmmap(kpgtbl, VIRTIO0, VIRTIO0, PGSIZE, PTE_R | PTE_W);[m
+ [m
+[32m+[m[32m#ifdef LAB_NET[m
+[32m+[m[32m  // PCI-E ECAM (configuration space), for pci.c[m
+[32m+[m[32m  kvmmap(kpgtbl, 0x30000000L, 0x30000000L, 0x10000000, PTE_R | PTE_W);[m
+[32m+[m
+[32m+[m[32m  // pci.c maps the e1000's registers here.[m
+[32m+[m[32m  kvmmap(kpgtbl, 0x40000000L, 0x40000000L, 0x20000, PTE_R | PTE_W);[m
+[32m+[m[32m#endif[m[41m  [m
+[32m+[m
+   // PLIC[m
+   kvmmap(kpgtbl, PLIC, PLIC, 0x4000000, PTE_R | PTE_W);[m
+ [m
+[36m@@ -92,6 +102,11 @@[m [mwalk(pagetable_t pagetable, uint64 va, int alloc)[m
+     pte_t *pte = &pagetable[PX(level, va)];[m
+     if(*pte & PTE_V) {[m
+       pagetable = (pagetable_t)PTE2PA(*pte);[m
+[32m+[m[32m#ifdef LAB_PGTBL[m
+[32m+[m[32m      if(PTE_LEAF(*pte)) {[m
+[32m+[m[32m        return pte;[m
+[32m+[m[32m      }[m
+[32m+[m[32m#endif[m
+     } else {[m
+       if(!alloc || (pagetable = (pde_t*)kalloc()) == 0)[m
+         return 0;[m
+[36m@@ -125,6 +140,7 @@[m [mwalkaddr(pagetable_t pagetable, uint64 va)[m
+   return pa;[m
+ }[m
+ [m
+[32m+[m
+ // add a mapping to the kernel page table.[m
+ // only used when booting.[m
+ // does not flush TLB or enable paging.[m
+[36m@@ -179,15 +195,19 @@[m [muvmunmap(pagetable_t pagetable, uint64 va, uint64 npages, int do_free)[m
+ {[m
+   uint64 a;[m
+   pte_t *pte;[m
+[32m+[m[32m  int sz;[m
+ [m
+   if((va % PGSIZE) != 0)[m
+     panic("uvmunmap: not aligned");[m
+ [m
+[31m-  for(a = va; a < va + npages*PGSIZE; a += PGSIZE){[m
+[32m+[m[32m  for(a = va; a < va + npages*PGSIZE; a += sz){[m
+[32m+[m[32m    sz = PGSIZE;[m
+     if((pte = walk(pagetable, a, 0)) == 0)[m
+       panic("uvmunmap: walk");[m
+[31m-    if((*pte & PTE_V) == 0)[m
+[32m+[m[32m    if((*pte & PTE_V) == 0) {[m
+[32m+[m[32m      printf("va=%ld pte=%ld\n", a, *pte);[m
+       panic("uvmunmap: not mapped");[m
+[32m+[m[32m    }[m
+     if(PTE_FLAGS(*pte) == PTE_V)[m
+       panic("uvmunmap: not a leaf");[m
+     if(do_free){[m
+[36m@@ -227,6 +247,7 @@[m [muvmfirst(pagetable_t pagetable, uchar *src, uint sz)[m
+   memmove(mem, src, sz);[m
+ }[m
+ [m
+[32m+[m
+ // Allocate PTEs and physical memory to grow process from oldsz to[m
+ // newsz, which need not be page aligned.  Returns new size or 0 on error.[m
+ uint64[m
+[36m@@ -234,19 +255,23 @@[m [muvmalloc(pagetable_t pagetable, uint64 oldsz, uint64 newsz, int xperm)[m
+ {[m
+   char *mem;[m
+   uint64 a;[m
+[32m+[m[32m  int sz;[m
+ [m
+   if(newsz < oldsz)[m
+     return oldsz;[m
+ [m
+   oldsz = PGROUNDUP(oldsz);[m
+[31m-  for(a = oldsz; a < newsz; a += PGSIZE){[m
+[32m+[m[32m  for(a = oldsz; a < newsz; a += sz){[m
+[32m+[m[32m    sz = PGSIZE;[m
+     mem = kalloc();[m
+     if(mem == 0){[m
+       uvmdealloc(pagetable, a, oldsz);[m
+       return 0;[m
+     }[m
+[31m-    memset(mem, 0, PGSIZE);[m
+[31m-    if(mappages(pagetable, a, PGSIZE, (uint64)mem, PTE_R|PTE_U|xperm) != 0){[m
+[32m+[m[32m#ifndef LAB_SYSCALL[m
+[32m+[m[32m    memset(mem, 0, sz);[m
+[32m+[m[32m#endif[m
+[32m+[m[32m    if(mappages(pagetable, a, sz, (uint64)mem, PTE_R|PTE_U|xperm) != 0){[m
+       kfree(mem);[m
+       uvmdealloc(pagetable, a, oldsz);[m
+       return 0;[m
+[36m@@ -316,8 +341,11 @@[m [muvmcopy(pagetable_t old, pagetable_t new, uint64 sz)[m
+   uint64 pa, i;[m
+   uint flags;[m
+   char *mem;[m
+[32m+[m[32m  int szinc;[m
+ [m
+[31m-  for(i = 0; i < sz; i += PGSIZE){[m
+[32m+[m[32m  for(i = 0; i < sz; i += szinc){[m
+[32m+[m[32m    szinc = PGSIZE;[m
+[32m+[m[32m    szinc = PGSIZE;[m
+     if((pte = walk(old, i, 0)) == 0)[m
+       panic("uvmcopy: pte should exist");[m
+     if((*pte & PTE_V) == 0)[m
+[36m@@ -363,13 +391,21 @@[m [mcopyout(pagetable_t pagetable, uint64 dstva, char *src, uint64 len)[m
+ [m
+   while(len > 0){[m
+     va0 = PGROUNDDOWN(dstva);[m
+[31m-    if(va0 >= MAXVA)[m
+[32m+[m[32m    if (va0 >= MAXVA)[m
+[32m+[m[32m      return -1;[m
+[32m+[m[32m    if((pte = walk(pagetable, va0, 0)) == 0) {[m
+[32m+[m[32m      // printf("copyout: pte should exist 0x%x %d\n", dstva, len);[m
+[32m+[m[32m      return -1;[m
+[32m+[m[32m    }[m
+[32m+[m
+[32m+[m
+[32m+[m[32m    // forbid copyout over read-only user text pages.[m
+[32m+[m[32m    if((*pte & PTE_W) == 0)[m
+       return -1;[m
+[31m-    pte = walk(pagetable, va0, 0);[m
+[31m-    if(pte == 0 || (*pte & PTE_V) == 0 || (*pte & PTE_U) == 0 ||[m
+[31m-       (*pte & PTE_W) == 0)[m
+[32m+[m[41m    [m
+[32m+[m[32m    pa0 = walkaddr(pagetable, va0);[m
+[32m+[m[32m    if(pa0 == 0)[m
+       return -1;[m
+[31m-    pa0 = PTE2PA(*pte);[m
+     n = PGSIZE - (dstva - va0);[m
+     if(n > len)[m
+       n = len;[m
+[36m@@ -389,7 +425,7 @@[m [mint[m
+ copyin(pagetable_t pagetable, char *dst, uint64 srcva, uint64 len)[m
+ {[m
+   uint64 n, va0, pa0;[m
+[31m-[m
+[32m+[m[41m  [m
+   while(len > 0){[m
+     va0 = PGROUNDDOWN(srcva);[m
+     pa0 = walkaddr(pagetable, va0);[m
+[36m@@ -449,3 +485,20 @@[m [mcopyinstr(pagetable_t pagetable, char *dst, uint64 srcva, uint64 max)[m
+     return -1;[m
+   }[m
+ }[m
+[32m+[m
+[32m+[m
+[32m+[m[32m#ifdef LAB_PGTBL[m
+[32m+[m[32mvoid[m
+[32m+[m[32mvmprint(pagetable_t pagetable) {[m
+[32m+[m[32m  // your code here[m
+[32m+[m[32m}[m
+[32m+[m[32m#endif[m
+[32m+[m
+[32m+[m
+[32m+[m
+[32m+[m[32m#ifdef LAB_PGTBL[m
+[32m+[m[32mpte_t*[m
+[32m+[m[32mpgpte(pagetable_t pagetable, uint64 va) {[m
+[32m+[m[32m  return walk(pagetable, va, 0);[m
+[32m+[m[32m}[m
+[32m+[m[32m#endif[m
+[1mdiff --git a/user/attack.c b/user/attack.c[m
+[1mnew file mode 100644[m
+[1mindex 0000000..928e7d0[m
+[1m--- /dev/null[m
+[1m+++ b/user/attack.c[m
+[36m@@ -0,0 +1,13 @@[m
+[32m+[m[32m#include "kernel/types.h"[m
+[32m+[m[32m#include "kernel/fcntl.h"[m
+[32m+[m[32m#include "user/user.h"[m
+[32m+[m[32m#include "kernel/riscv.h"[m
+[32m+[m
+[32m+[m[32mint[m
+[32m+[m[32mmain(int argc, char *argv[])[m
+[32m+[m[32m{[m
+[32m+[m[32m  // your code here.  you should write the secret to fd 2 using write[m
+[32m+[m[32m  // (e.g., write(2, secret, 8)[m
+[32m+[m
+[32m+[m[32m  exit(1);[m
+[32m+[m[32m}[m
+[1mdiff --git a/user/attacktest.c b/user/attacktest.c[m
+[1mnew file mode 100644[m
+[1mindex 0000000..6853b62[m
+[1m--- /dev/null[m
+[1m+++ b/user/attacktest.c[m
+[36m@@ -0,0 +1,107 @@[m
+[32m+[m[32m#include "kernel/types.h"[m
+[32m+[m[32m#include "kernel/fcntl.h"[m
+[32m+[m[32m#include "user/user.h"[m
+[32m+[m[32m#include "kernel/riscv.h"[m
+[32m+[m
+[32m+[m[32mchar secret[8];[m
+[32m+[m[32mchar output[64];[m
+[32m+[m
+[32m+[m[32m// from FreeBSD.[m
+[32m+[m[32mint[m
+[32m+[m[32mdo_rand(unsigned long *ctx)[m
+[32m+[m[32m{[m
+[32m+[m[32m/*[m
+[32m+[m[32m * Compute x = (7^5 * x) mod (2^31 - 1)[m
+[32m+[m[32m * without overflowing 31 bits:[m
+[32m+[m[32m *      (2^31 - 1) = 127773 * (7^5) + 2836[m
+[32m+[m[32m * From "Random number generators: good ones are hard to find",[m
+[32m+[m[32m * Park and Miller, Communications of the ACM, vol. 31, no. 10,[m
+[32m+[m[32m * October 1988, p. 1195.[m
+[32m+[m[32m */[m
+[32m+[m[32m    long hi, lo, x;[m
+[32m+[m
+[32m+[m[32m    /* Transform to [1, 0x7ffffffe] range. */[m
+[32m+[m[32m    x = (*ctx % 0x7ffffffe) + 1;[m
+[32m+[m[32m    hi = x / 127773;[m
+[32m+[m[32m    lo = x % 127773;[m
+[32m+[m[32m    x = 16807 * lo - 2836 * hi;[m
+[32m+[m[32m    if (x < 0)[m
+[32m+[m[32m        x += 0x7fffffff;[m
+[32m+[m[32m    /* Transform to [0, 0x7ffffffd] range. */[m
+[32m+[m[32m    x--;[m
+[32m+[m[32m    *ctx = x;[m
+[32m+[m[32m    return (x);[m
+[32m+[m[32m}[m
+[32m+[m
+[32m+[m[32munsigned long rand_next = 1;[m
+[32m+[m
+[32m+[m[32mint[m
+[32m+[m[32mrand(void)[m
+[32m+[m[32m{[m
+[32m+[m[32m    return (do_rand(&rand_next));[m
+[32m+[m[32m}[m
+[32m+[m
+[32m+[m[32m// generate a random string of the indicated length.[m
+[32m+[m[32mchar *[m
+[32m+[m[32mrandstring(char *buf, int n)[m
+[32m+[m[32m{[m
+[32m+[m[32m  for(int i = 0; i < n-1; i++) {[m
+[32m+[m[32m    buf[i] = "./abcdef"[(rand() >> 7) % 8];[m
+[32m+[m[32m  }[m
+[32m+[m[32m  if(n > 0)[m
+[32m+[m[32m    buf[n-1] = '\0';[m
+[32m+[m[32m  return buf;[m
+[32m+[m[32m}[m
+[32m+[m
+[32m+[m[32mint[m
+[32m+[m[32mmain(int argc, char *argv[])[m
+[32m+[m[32m{[m
+[32m+[m[32m  int pid;[m
+[32m+[m[32m  int fds[2];[m
+[32m+[m
+[32m+[m[32m  // an insecure way of generating a random string, because xv6[m
+[32m+[m[32m  // doesn't have good source of randomness.[m
+[32m+[m[32m  rand_next = uptime();[m
+[32m+[m[32m  randstring(secret, 8);[m
+[32m+[m[41m  [m
+[32m+[m[32m  if((pid = fork()) < 0) {[m
+[32m+[m[32m    printf("fork failed\n");[m
+[32m+[m[32m    exit(1);[m[41m   [m
+[32m+[m[32m  }[m
+[32m+[m[32m  if(pid == 0) {[m
+[32m+[m[32m    char *newargv[] = { "secret", secret, 0 };[m
+[32m+[m[32m    exec(newargv[0], newargv);[m
+[32m+[m[32m    printf("exec %s failed\n", newargv[0]);[m
+[32m+[m[32m    exit(1);[m
+[32m+[m[32m  } else {[m
+[32m+[m[32m    wait(0);  // wait for secret to exit[m
+[32m+[m[32m    if(pipe(fds) < 0) {[m
+[32m+[m[32m      printf("pipe failed\n");[m
+[32m+[m[32m      exit(1);[m[41m   [m
+[32m+[m[32m    }[m
+[32m+[m[32m    if((pid = fork()) < 0) {[m
+[32m+[m[32m      printf("fork failed\n");[m
+[32m+[m[32m      exit(1);[m[41m   [m
+[32m+[m[32m    }[m
+[32m+[m[32m    if(pid == 0) {[m
+[32m+[m[32m      close(fds[0]);[m
+[32m+[m[32m      close(2);[m
+[32m+[m[32m      dup(fds[1]);[m
+[32m+[m[32m      char *newargv[] = { "attack", 0 };[m
+[32m+[m[32m      exec(newargv[0], newargv);[m
+[32m+[m[32m      printf("exec %s failed\n", newargv[0]);[m
+[32m+[m[32m      exit(1);[m
+[32m+[m[32m    } else {[m
+[32m+[m[32m       close(fds[1]);[m
+[32m+[m[32m      if(read(fds[0], output, 64) < 0) {[m
+[32m+[m[32m        printf("FAIL; read failed; no secret\n");[m
+[32m+[m[32m        exit(1);[m
+[32m+[m[32m      }[m
+[32m+[m[32m      if(strcmp(secret, output) == 0) {[m
+[32m+[m[32m        printf("OK: secret is %s\n", output);[m
+[32m+[m[32m      } else {[m
+[32m+[m[32m        printf("FAIL: no/incorrect secret\n");[m
+[32m+[m[32m      }[m
+[32m+[m[32m    }[m
+[32m+[m[32m  }[m
+[32m+[m[32m}[m
+[1mdiff --git a/user/secret.c b/user/secret.c[m
+[1mnew file mode 100644[m
+[1mindex 0000000..77378f4[m
+[1m--- /dev/null[m
+[1m+++ b/user/secret.c[m
+[36m@@ -0,0 +1,20 @@[m
+[32m+[m[32m#include "kernel/types.h"[m
+[32m+[m[32m#include "kernel/fcntl.h"[m
+[32m+[m[32m#include "user/user.h"[m
+[32m+[m[32m#include "kernel/riscv.h"[m
+[32m+[m
+[32m+[m
+[32m+[m[32mint[m
+[32m+[m[32mmain(int argc, char *argv[])[m
+[32m+[m[32m{[m
+[32m+[m[32m  if(argc != 2){[m
+[32m+[m[32m    printf("Usage: secret the-secret\n");[m
+[32m+[m[32m    exit(1);[m
+[32m+[m[32m  }[m
+[32m+[m[32m  char *end = sbrk(PGSIZE*32);[m
+[32m+[m[32m  end = end + 9 * PGSIZE;[m
+[32m+[m[32m  strcpy(end, "my very very very secret pw is:   ");[m
+[32m+[m[32m  strcpy(end+32, argv[1]);[m
+[32m+[m[32m  exit(0);[m
+[32m+[m[32m}[m
+[32m+[m
+[1mdiff --git a/user/sysinfotest.c b/user/sysinfotest.c[m
+[1mnew file mode 100644[m
+[1mindex 0000000..a92d10a[m
+[1m--- /dev/null[m
+[1m+++ b/user/sysinfotest.c[m
+[36m@@ -0,0 +1,153 @@[m
+[32m+[m[32m#include "kernel/types.h"[m
+[32m+[m[32m#include "kernel/riscv.h"[m
+[32m+[m[32m#include "kernel/sysinfo.h"[m
+[32m+[m[32m#include "user/user.h"[m
+[32m+[m
+[32m+[m
+[32m+[m[32mvoid[m
+[32m+[m[32msinfo(struct sysinfo *info) {[m
+[32m+[m[32m  if (sysinfo(info) < 0) {[m
+[32m+[m[32m    printf("FAIL: sysinfo failed");[m
+[32m+[m[32m    exit(1);[m
+[32m+[m[32m  }[m
+[32m+[m[32m}[m
+[32m+[m
+[32m+[m[32m//[m
+[32m+[m[32m// use sbrk() to count how many free physical memory pages there are.[m
+[32m+[m[32m//[m
+[32m+[m[32mint[m
+[32m+[m[32mcountfree()[m
+[32m+[m[32m{[m
+[32m+[m[32m  uint64 sz0 = (uint64)sbrk(0);[m
+[32m+[m[32m  struct sysinfo info;[m
+[32m+[m[32m  int n = 0;[m
+[32m+[m
+[32m+[m[32m  while(1){[m
+[32m+[m[32m    if((uint64)sbrk(PGSIZE) == 0xffffffffffffffff){[m
+[32m+[m[32m      break;[m
+[32m+[m[32m    }[m
+[32m+[m[32m    n += PGSIZE;[m
+[32m+[m[32m  }[m
+[32m+[m[32m  sinfo(&info);[m
+[32m+[m[32m  if (info.freemem != 0) {[m
+[32m+[m[32m    printf("FAIL: there is no free mem, but sysinfo.freemem=%ld\n",[m
+[32m+[m[32m      info.freemem);[m
+[32m+[m[32m    exit(1);[m
+[32m+[m[32m  }[m
+[32m+[m[32m  sbrk(-((uint64)sbrk(0) - sz0));[m
+[32m+[m[32m  return n;[m
+[32m+[m[32m}[m
+[32m+[m
+[32m+[m[32mvoid[m
+[32m+[m[32mtestmem() {[m
+[32m+[m[32m  struct sysinfo info;[m
+[32m+[m[32m  uint64 n = countfree();[m
+[32m+[m[41m  [m
+[32m+[m[32m  sinfo(&info);[m
+[32m+[m
+[32m+[m[32m  if (info.freemem!= n) {[m
+[32m+[m[32m    printf("FAIL: free mem %ld (bytes) instead of %ld\n", info.freemem, n);[m
+[32m+[m[32m    exit(1);[m
+[32m+[m[32m  }[m
+[32m+[m[41m  [m
+[32m+[m[32m  if((uint64)sbrk(PGSIZE) == 0xffffffffffffffff){[m
+[32m+[m[32m    printf("sbrk failed");[m
+[32m+[m[32m    exit(1);[m
+[32m+[m[32m  }[m
+[32m+[m
+[32m+[m[32m  sinfo(&info);[m
+[32m+[m[41m    [m
+[32m+[m[32m  if (info.freemem != n-PGSIZE) {[m
+[32m+[m[32m    printf("FAIL: free mem %ld (bytes) instead of %ld\n", n-PGSIZE, info.freemem);[m
+[32m+[m[32m    exit(1);[m
+[32m+[m[32m  }[m
+[32m+[m[41m  [m
+[32m+[m[32m  if((uint64)sbrk(-PGSIZE) == 0xffffffffffffffff){[m
+[32m+[m[32m    printf("sbrk failed");[m
+[32m+[m[32m    exit(1);[m
+[32m+[m[32m  }[m
+[32m+[m
+[32m+[m[32m  sinfo(&info);[m
+[32m+[m[41m    [m
+[32m+[m[32m  if (info.freemem != n) {[m
+[32m+[m[32m    printf("FAIL: free mem %ld (bytes) instead of %ld\n", n, info.freemem);[m
+[32m+[m[32m    exit(1);[m
+[32m+[m[32m  }[m
+[32m+[m[32m}[m
+[32m+[m
+[32m+[m[32mvoid[m
+[32m+[m[32mtestcall() {[m
+[32m+[m[32m  struct sysinfo info;[m
+[32m+[m[41m  [m
+[32m+[m[32m  if (sysinfo(&info) < 0) {[m
+[32m+[m[32m    printf("FAIL: sysinfo failed\n");[m
+[32m+[m[32m    exit(1);[m
+[32m+[m[32m  }[m
+[32m+[m
+[32m+[m[32m  if (sysinfo((struct sysinfo *) 0xeaeb0b5b00002f5e) !=  0xffffffffffffffff) {[m
+[32m+[m[32m    printf("FAIL: sysinfo succeeded with bad argument\n");[m
+[32m+[m[32m    exit(1);[m
+[32m+[m[32m  }[m
+[32m+[m[32m}[m
+[32m+[m
+[32m+[m[32mvoid testproc() {[m
+[32m+[m[32m  struct sysinfo info;[m
+[32m+[m[32m  uint64 nproc;[m
+[32m+[m[32m  int status;[m
+[32m+[m[32m  int pid;[m
+[32m+[m[41m  [m
+[32m+[m[32m  sinfo(&info);[m
+[32m+[m[32m  nproc = info.nproc;[m
+[32m+[m
+[32m+[m[32m  pid = fork();[m
+[32m+[m[32m  if(pid < 0){[m
+[32m+[m[32m    printf("sysinfotest: fork failed\n");[m
+[32m+[m[32m    exit(1);[m
+[32m+[m[32m  }[m
+[32m+[m[32m  if(pid == 0){[m
+[32m+[m[32m    sinfo(&info);[m
+[32m+[m[32m    if(info.nproc != nproc+1) {[m
+[32m+[m[32m      printf("sysinfotest: FAIL nproc is %ld instead of %ld\n", info.nproc, nproc+1);[m
+[32m+[m[32m      exit(1);[m
+[32m+[m[32m    }[m
+[32m+[m[32m    exit(0);[m
+[32m+[m[32m  }[m
+[32m+[m[32m  wait(&status);[m
+[32m+[m[32m  sinfo(&info);[m
+[32m+[m[32m  if(info.nproc != nproc) {[m
+[32m+[m[32m      printf("sysinfotest: FAIL nproc is %ld instead of %ld\n", info.nproc, nproc);[m
+[32m+[m[32m      exit(1);[m
+[32m+[m[32m  }[m
+[32m+[m[32m}[m
+[32m+[m
+[32m+[m[32mvoid testbad() {[m
+[32m+[m[32m  int pid = fork();[m
+[32m+[m[32m  int xstatus;[m
+[32m+[m[41m  [m
+[32m+[m[32m  if(pid < 0){[m
+[32m+[m[32m    printf("sysinfotest: fork failed\n");[m
+[32m+[m[32m    exit(1);[m
+[32m+[m[32m  }[m
+[32m+[m[32m  if(pid == 0){[m
+[32m+[m[32m      sinfo(0x0);[m
+[32m+[m[32m      exit(0);[m
+[32m+[m[32m  }[m
+[32m+[m[32m  wait(&xstatus);[m
+[32m+[m[32m  if(xstatus == -1)  // kernel killed child?[m
+[32m+[m[32m    exit(0);[m
+[32m+[m[32m  else {[m
+[32m+[m[32m    printf("sysinfotest: testbad succeeded %d\n", xstatus);[m
+[32m+[m[32m    exit(xstatus);[m
+[32m+[m[32m  }[m
+[32m+[m[32m}[m
+[32m+[m
+[32m+[m[32mint[m
+[32m+[m[32mmain(int argc, char *argv[])[m
+[32m+[m[32m{[m
+[32m+[m[32m  printf("sysinfotest: start\n");[m
+[32m+[m[32m  testcall();[m
+[32m+[m[32m  testmem();[m
+[32m+[m[32m  testproc();[m
+[32m+[m[32m  printf("sysinfotest: OK\n");[m
+[32m+[m[32m  exit(0);[m
+[32m+[m[32m}[m
+[1mdiff --git a/user/trace.c b/user/trace.c[m
+[1mnew file mode 100644[m
+[1mindex 0000000..474b26c[m
+[1m--- /dev/null[m
+[1m+++ b/user/trace.c[m
+[36m@@ -0,0 +1,29 @@[m
+[32m+[m[32m#include "kernel/param.h"[m
+[32m+[m[32m#include "kernel/types.h"[m
+[32m+[m[32m#include "kernel/stat.h"[m
+[32m+[m[32m#include "user/user.h"[m
+[32m+[m
+[32m+[m[32mint[m
+[32m+[m[32mmain(int argc, char *argv[])[m
+[32m+[m[32m{[m
+[32m+[m[32m  int i;[m
+[32m+[m[32m  char *nargv[MAXARG];[m
+[32m+[m
+[32m+[m[32m  if(argc < 3 || (argv[1][0] < '0' || argv[1][0] > '9')){[m
+[32m+[m[32m    fprintf(2, "Usage: %s mask command\n", argv[0]);[m
+[32m+[m[32m    exit(1);[m
+[32m+[m[32m  }[m
+[32m+[m
+[32m+[m[32m  if (trace(atoi(argv[1])) < 0) {[m
+[32m+[m[32m    fprintf(2, "%s: trace failed\n", argv[0]);[m
+[32m+[m[32m    exit(1);[m
+[32m+[m[32m  }[m
+[32m+[m[41m  [m
+[32m+[m[32m  for(i = 2; i < argc && i < MAXARG; i++){[m
+[32m+[m[32m    nargv[i-2] = argv[i];[m
+[32m+[m[32m  }[m
+[32m+[m[32m  nargv[argc-2] = 0;[m
+[32m+[m[32m  exec(nargv[0], nargv);[m
+[32m+[m[32m  printf("trace: exec failed\n");[m
+[32m+[m[32m  exit(0);[m
+[32m+[m[32m}[m
+[1mdiff --git a/user/user.h b/user/user.h[m
+[1mindex f16fe27..270dae1 100644[m
+[1m--- a/user/user.h[m
+[1m+++ b/user/user.h[m
+[36m@@ -1,4 +1,5 @@[m
+ struct stat;[m
+[32m+[m[32mstruct sysinfo;[m
+ [m
+ // system calls[m
+ int fork(void);[m
+[36m@@ -22,6 +23,7 @@[m [mint getpid(void);[m
+ char* sbrk(int);[m
+ int sleep(int);[m
+ int uptime(void);[m
+[32m+[m[32mint sysinfo(struct sysinfo*);[m
+ [m
+ // ulib.c[m
+ int stat(const char*, struct stat*);[m
+[1mdiff --git a/user/usys.pl b/user/usys.pl[m
+[1mindex 01e426e..225b4f2 100755[m
+[1m--- a/user/usys.pl[m
+[1m+++ b/user/usys.pl[m
+[36m@@ -36,3 +36,4 @@[m [mentry("getpid");[m
+ entry("sbrk");[m
+ entry("sleep");[m
+ entry("uptime");[m
+[32m+[m[32mentry("sysinfo");[m
+\ No newline at end of file[m
+[1mdiff --git a/user/xargstest.sh b/user/xargstest.sh[m
+[1mdeleted file mode 100644[m
+[1mindex 4362589..0000000[m
+[1m--- a/user/xargstest.sh[m
+[1m+++ /dev/null[m
+[36m@@ -1,6 +0,0 @@[m
+[31m-mkdir a[m
+[31m-echo hello > a/b[m
+[31m-mkdir c[m
+[31m-echo hello > c/b[m
+[31m-echo hello > b[m
+[31m-find . b | xargs grep hello[m
