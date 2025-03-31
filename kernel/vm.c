@@ -488,13 +488,44 @@ copyinstr(pagetable_t pagetable, char *dst, uint64 srcva, uint64 max)
 
 
 #ifdef LAB_PGTBL
+// 递归打印页表
+void
+vmprintwalk(uint64 paths[2][3], pagetable_t root, int cnt) {
+    if(cnt == 2) {
+        // 当递归到页表叶子节点时,打印页表前两项
+        printf(" ..%d: pte %lx pa %lx\n", (int)paths[0][0], paths[0][1], paths[0][2]);
+        printf(" .. ..%d: pte %lx pa %lx\n", (int)paths[1][0], paths[1][1], paths[1][2]);
+    }
+    // there are 2^9 = 512 PTEs in a page table.
+    // 查找pte的512项
+    for (int i = 0; i < 512; i++) {
+        pte_t pte = root[i];
+        // this PTE points to a lower-level page table.
+        uint64 child = PTE2PA(pte);
+        if((pte & PTE_V) && (pte & (PTE_R|PTE_W|PTE_X)) == 0) {
+            // 记录路径
+            if(cnt < 2) {
+                paths[cnt][0] = i;
+                paths[cnt][1] = pte;
+                paths[cnt][2] = child;
+            } else {
+                continue;
+            }
+            vmprintwalk(paths, (pagetable_t)child, cnt + 1);
+        } else if(pte & PTE_V) {
+            printf(" .. .. ..%d: pte %lx pa %lx\n", i, pte, child);
+        }
+    }
+}
+
+/*打印页表*/
 void
 vmprint(pagetable_t pagetable) {
-  // your code here
+    uint64 paths[2][3];
+    printf("page table %p\n", pagetable);
+    vmprintwalk(paths, pagetable, 0);
 }
 #endif
-
-
 
 #ifdef LAB_PGTBL
 pte_t*

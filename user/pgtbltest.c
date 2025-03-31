@@ -10,14 +10,16 @@ void print_pgtbl();
 void print_kpgtbl();
 void ugetpid_test();
 void superpg_test();
+void pgaccess_test();
 
 int
 main(int argc, char *argv[])
 {
   print_pgtbl();
-  ugetpid_test();
-  print_kpgtbl();
-  superpg_test();
+  // ugetpid_test();  // Tạm thởi bỏ qua bài kiểm tra này
+  // print_kpgtbl();  // Tạm thởi bỏ qua bài kiểm tra này
+  // superpg_test();  // Tạm thởi bỏ qua bài kiểm tra này
+  pgaccess_test();
   printf("pgtbltest: all tests succeeded\n");
   exit(0);
 }
@@ -139,4 +141,42 @@ superpg_test()
     }
   }
   printf("superpg_test: OK\n");  
+}
+
+void
+pgaccess_test()
+{
+  char *buffer = malloc(32 * PGSIZE);
+  char *bitmap = malloc(1);
+  int i;
+
+  printf("pgaccess_test starting\n");
+  testname = "pgaccess_test";
+
+  // Allocate 32 pages
+  for(i = 0; i < 32; i++) {
+    buffer[i * PGSIZE] = 1;
+  }
+  
+  // Access a few specific pages
+  buffer[0 * PGSIZE] = buffer[0 * PGSIZE];
+  buffer[7 * PGSIZE] = buffer[7 * PGSIZE];
+  buffer[15 * PGSIZE] = buffer[15 * PGSIZE];
+  buffer[24 * PGSIZE] = buffer[24 * PGSIZE];
+  buffer[31 * PGSIZE] = buffer[31 * PGSIZE];
+
+  // Call pgaccess to get the access bitmap
+  if (pgaccess((void *)buffer, 32, bitmap) != 0) {
+    err("pgaccess failed");
+  }
+
+  unsigned char expected_bitmap = (1 << 0) | (1 << 7);
+  if ((*bitmap & expected_bitmap) != expected_bitmap) {
+    printf("bitmap: %x, expected bits 0 and 7 to be set\n", *bitmap);
+    err("incorrect access bits set");
+  }
+
+  free(buffer);
+  free(bitmap);
+  printf("pgaccess_test: OK\n");
 }

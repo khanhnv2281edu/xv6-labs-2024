@@ -101,6 +101,59 @@ sys_kpgtbl(void)
 }
 #endif
 
+#ifdef LAB_PGTBL
+uint64
+sys_pgaccess(void)
+{
+  // Lab pgtbl: your code here.
+  uint64 va;        // starting virtual address
+  int num_pages;    // number of pages to check
+  uint64 user_addr; // user address to store bitmap
+
+  // Parse arguments
+  argaddr(0, &va);
+  argint(1, &num_pages);
+  argaddr(2, &user_addr);
+
+  // Set a reasonable limit on the number of pages to check
+  if(num_pages <= 0 || num_pages > 32)
+    return -1;
+
+  struct proc *p = myproc();
+  
+  // Create a temporary buffer to store the bitmap
+  char bitmap = 0;
+  
+  // Check each page for access
+  for(int i = 0; i < num_pages; i++) {
+    uint64 page_va = va + i * PGSIZE;
+    
+    // Check if the page is within process memory
+    if(page_va >= p->sz)
+      continue;
+      
+    // Find the PTE for this page
+    pte_t *pte = walk(p->pagetable, page_va, 0);
+    if(pte == 0 || (*pte & PTE_V) == 0)
+      continue;
+      
+    // Check if the page has been accessed
+    if(*pte & PTE_A) {
+      // Set the corresponding bit in the bitmap
+      bitmap |= (1 << i);
+      
+      // Clear the access bit
+      *pte &= ~PTE_A;
+    }
+  }
+  
+  // Copy the bitmap to user space
+  if(copyout(p->pagetable, user_addr, (char*)&bitmap, sizeof(bitmap)) < 0)
+    return -1;
+    
+  return 0;
+}
+#endif
 
 uint64
 sys_kill(void)
